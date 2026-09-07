@@ -1,0 +1,74 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 56px;
+  background: #1e2233;
+  flex-shrink: 0;
+}
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.logo {
+  font-family: monospace;
+  font-weight: 500;
+  font-size: 15px;
+  color: #6b8aff;
+}
+.projectName {
+  color: #f0f1f5;
+  font-size: 13px;
+  font-weight: 500;
+}
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.addBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  background: #3563e9;
+  color: #fff;
+  cursor: pointer;
+}
+.settingsBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.08);
+  color: #f0f1f5;
+  cursor: pointer;
+}
+.avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: #2e3450;
+  color: #6b8aff;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
