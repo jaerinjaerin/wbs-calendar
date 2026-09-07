@@ -1,0 +1,49 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  min-width: 300px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.subtitle {
+  font-size: 13px;
+  color: #5c6270;
+  margin-bottom: 24px;
+}
+.pinRow {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.pinInput {
+  width: 48px;
+  height: 56px;
+  border: 2px solid #d8dce6;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 24px;
+  outline: none;
+}
+.pinInput:focus {
+  border-color: #3563e9;
+}
+.error {
+  color: #c74060;
+  font-size: 13px;
+}
