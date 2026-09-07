@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState } from 'react';
-import Calendar from '@toast-ui/react-calendar';
+import type { ComponentType } from 'react';
 import '@toast-ui/calendar/dist/toastui-calendar.min.css';
 import type { Task, WbsNode, User } from '@/types';
 import styles from './CalendarView.module.css';
@@ -47,6 +47,16 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<'month' | 'week'>('month');
     const [dateLabel, setDateLabel] = useState('');
+    // ponytail: @toast-ui/calendar reads `window` at module-eval time, which
+    // crashes Next's SSR/prerender pass. Loading it lazily in an effect keeps
+    // it out of the server bundle's eval path without routing it through
+    // next/dynamic, whose LoadableComponent swallows the ref (see CalendarView
+    // usage in page.tsx — calendarRef must reach the real instance).
+    const [CalendarComp, setCalendarComp] = useState<ComponentType<any> | null>(null);
+
+    useEffect(() => {
+      import('@toast-ui/react-calendar').then((mod) => setCalendarComp(() => mod.default));
+    }, []);
 
     useImperativeHandle(ref, () => ({
       getContainerEl: () => containerRef.current,
@@ -63,7 +73,7 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
 
     useEffect(() => {
       updateDateLabel();
-    }, [view]);
+    }, [view, CalendarComp]);
 
     function navigate(direction: 'prev' | 'next' | 'today') {
       const inst = calRef.current?.getInstance?.();
@@ -101,37 +111,39 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
           </div>
         </div>
         <div ref={containerRef} className={styles.calendarContainer}>
-          <Calendar
-            ref={calRef}
-            height="100%"
-            view={view}
-            events={events}
-            month={{ startDayOfWeek: 1, isAlways6Weeks: false }}
-            week={{ startDayOfWeek: 1 }}
-            usageStatistics={false}
-            gridSelection={true}
-            onClickEvent={(e: any) => onClickEvent(e.event.id)}
-            onSelectDateTime={(e: any) => {
-              const d = e.start;
-              const date = d.toDate ? d.toDate() : new Date(d);
-              onClickDate(date.toISOString().split('T')[0]);
-            }}
-            onBeforeUpdateEvent={(e: any) => {
-              const { event, changes } = e;
-              const updates: Partial<Task> = {};
-              if (changes.start) {
-                const s = changes.start.toDate ? changes.start.toDate() : new Date(changes.start);
-                updates.start_date = s.toISOString().split('T')[0];
-              }
-              if (changes.end) {
-                const ed = changes.end.toDate ? changes.end.toDate() : new Date(changes.end);
-                updates.end_date = ed.toISOString().split('T')[0];
-              }
-              if (Object.keys(updates).length > 0) {
-                onUpdateTask(event.id, updates);
-              }
-            }}
-          />
+          {CalendarComp && (
+            <CalendarComp
+              ref={calRef}
+              height="100%"
+              view={view}
+              events={events}
+              month={{ startDayOfWeek: 1, isAlways6Weeks: false }}
+              week={{ startDayOfWeek: 1 }}
+              usageStatistics={false}
+              gridSelection={true}
+              onClickEvent={(e: any) => onClickEvent(e.event.id)}
+              onSelectDateTime={(e: any) => {
+                const d = e.start;
+                const date = d.toDate ? d.toDate() : new Date(d);
+                onClickDate(date.toISOString().split('T')[0]);
+              }}
+              onBeforeUpdateEvent={(e: any) => {
+                const { event, changes } = e;
+                const updates: Partial<Task> = {};
+                if (changes.start) {
+                  const s = changes.start.toDate ? changes.start.toDate() : new Date(changes.start);
+                  updates.start_date = s.toISOString().split('T')[0];
+                }
+                if (changes.end) {
+                  const ed = changes.end.toDate ? changes.end.toDate() : new Date(changes.end);
+                  updates.end_date = ed.toISOString().split('T')[0];
+                }
+                if (Object.keys(updates).length > 0) {
+                  onUpdateTask(event.id, updates);
+                }
+              }}
+            />
+          )}
         </div>
       </div>
     );

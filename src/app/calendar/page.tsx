@@ -2,15 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import { getSession, clearSession } from '@/lib/auth';
 import WbsTree from '@/components/WbsTree';
+import CalendarView from '@/components/CalendarView';
 import type { CalendarViewHandle } from '@/components/CalendarView';
-
-// ponytail: @toast-ui/calendar touches `window` at module load, so it must
-// never run during SSR/prerender — dynamic import with ssr:false is the fix.
-const CalendarView = dynamic(() => import('@/components/CalendarView'), { ssr: false });
 import ExportButtons from '@/components/ExportButtons';
 import TaskModal from '@/components/TaskModal';
 import TaskPeekPanel from '@/components/TaskPeekPanel';
