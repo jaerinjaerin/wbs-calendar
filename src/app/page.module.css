@@ -63,3 +63,41 @@
   color: #fff;
   font-weight: 600;
 }
+.setupForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+.setupInput {
+  padding: 10px 12px;
+  border: 2px solid #e8ecf2;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.setupInput:focus {
+  border-color: #3563e9;
+}
+.setupError {
+  color: #c74060;
+  font-size: 13px;
+  text-align: center;
+}
+.setupBtn {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #3563e9;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.setupBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

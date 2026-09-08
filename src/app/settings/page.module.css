@@ -1,0 +1,95 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+.title {
+  font-size: 22px;
+  font-weight: 600;
+}
+.backBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #d8dce6;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.section {
+  background: #fff;
+  border: 1px solid #e8ecf2;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.row {
+  display: flex;
+  gap: 8px;
+}
+.input {
+  padding: 8px 10px;
+  border: 1px solid #d8dce6;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  flex: 1;
+}
+.input:focus { border-color: #3563e9; }
+.saveBtn, .addBtn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #3563e9;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.userList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f6f7f9;
+  border-radius: 6px;
+}
+.userName { flex: 1; font-size: 13px; }
+.userRole {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #e8edfb;
+  color: #3563e9;
+}
+.deleteBtn {
+  padding: 4px 10px;
+  border: 1px solid #c74060;
+  border-radius: 4px;
+  background: transparent;
+  color: #c74060;
+  font-size: 11px;
+  cursor: pointer;
+}
+.addForm {
+  display: flex;
+  gap: 8px;
+}
