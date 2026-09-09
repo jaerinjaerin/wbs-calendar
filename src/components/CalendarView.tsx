@@ -120,6 +120,8 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
               month={{ startDayOfWeek: 1, isAlways6Weeks: false }}
               week={{ startDayOfWeek: 1 }}
               usageStatistics={false}
+              useDetailPopup={false}
+              useFormPopup={false}
               gridSelection={true}
               onClickEvent={(e: any) => onClickEvent(e.event.id)}
               onSelectDateTime={(e: any) => {

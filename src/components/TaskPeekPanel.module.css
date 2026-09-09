@@ -1,0 +1,75 @@
+.panel {
+  position: fixed;
+  right: 0;
+  top: 56px;
+  bottom: 0;
+  width: 340px;
+  background: #fff;
+  border-left: 1px solid #d8dce6;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 24px; height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #8b91a0;
+  cursor: pointer;
+  font-size: 16px;
+}
+.breadcrumb {
+  font-size: 11px;
+  color: #8b91a0;
+}
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  padding-right: 24px;
+}
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.label {
+  width: 60px;
+  color: #8b91a0;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.value { color: #1a1d26; }
+.status {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+.todo { background: #f0f1f4; color: #8b91a0; }
+.in_progress { background: #fef3e6; color: #e98b35; }
+.done { background: #e6f5ee; color: #2ba572; }
+.deleteBtn {
+  margin-top: auto;
+  padding: 8px;
+  border: 1px solid #c74060;
+  border-radius: 6px;
+  background: transparent;
+  color: #c74060;
+  font-size: 12px;
+  cursor: pointer;
+}
+.deleteBtn:hover { background: #fef0f3; }

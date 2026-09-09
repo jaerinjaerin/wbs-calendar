@@ -122,6 +122,7 @@ export default function CalendarPage() {
           projectId={session.project_id}
           selectedNodeId={selectedNodeId}
           onSelectNode={setSelectedNodeId}
+          onDataChange={() => loadData(session.project_id)}
         />
         <CalendarView
           ref={calendarRef}
