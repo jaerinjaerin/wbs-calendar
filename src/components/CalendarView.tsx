@@ -20,12 +20,20 @@ export interface CalendarViewHandle {
   getInstance: () => any;
 }
 
-function toCalendarEvents(tasks: Task[], wbsNodes: WbsNode[], users: User[]) {
-  const nodeMap = new Map(wbsNodes.map((n) => [n.id, n]));
+// ponytail: calendars prop lets the library own color mapping per calendarId
+function toCalendarInfos(wbsNodes: WbsNode[]) {
+  return wbsNodes.map((n) => ({
+    id: n.id,
+    name: n.name,
+    backgroundColor: n.color ?? '#3563e9',
+    borderColor: n.color ?? '#3563e9',
+  }));
+}
+
+function toCalendarEvents(tasks: Task[], users: User[]) {
   const userMap = new Map(users.map((u) => [u.id, u]));
 
   return tasks.map((task) => {
-    const node = nodeMap.get(task.wbs_node_id);
     const assignee = task.assignee_id ? userMap.get(task.assignee_id) : null;
     return {
       id: task.id,
@@ -34,8 +42,6 @@ function toCalendarEvents(tasks: Task[], wbsNodes: WbsNode[], users: User[]) {
       start: task.start_date,
       end: task.end_date,
       category: 'allday' as const,
-      backgroundColor: node?.color ?? '#3563e9',
-      borderColor: node?.color ?? '#3563e9',
       body: assignee?.name ?? '',
     };
   });
@@ -84,7 +90,8 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
       updateDateLabel();
     }
 
-    const events = toCalendarEvents(tasks, wbsNodes, users);
+    const calendars = toCalendarInfos(wbsNodes);
+    const events = toCalendarEvents(tasks, users);
 
     return (
       <div className={styles.wrapper}>
@@ -116,10 +123,13 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
               ref={calRef}
               height="100%"
               view={view}
+              calendars={calendars}
               events={events}
               month={{ startDayOfWeek: 1, isAlways6Weeks: false }}
               week={{ startDayOfWeek: 1 }}
               usageStatistics={false}
+              useDetailPopup={false}
+              useFormPopup={false}
               gridSelection={true}
               onClickEvent={(e: any) => onClickEvent(e.event.id)}
               onSelectDateTime={(e: any) => {
@@ -129,6 +139,11 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
               }}
               onBeforeUpdateEvent={(e: any) => {
                 const { event, changes } = e;
+                // ponytail: updateEvent() gives instant visual feedback; Supabase sync is async
+                const inst = calRef.current?.getInstance?.();
+                if (inst) {
+                  inst.updateEvent(event.id, event.calendarId, changes);
+                }
                 const updates: Partial<Task> = {};
                 if (changes.start) {
                   const s = changes.start.toDate ? changes.start.toDate() : new Date(changes.start);

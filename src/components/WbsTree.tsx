@@ -10,9 +10,10 @@ interface WbsTreeProps {
   projectId: string;
   selectedNodeId: string | null;
   onSelectNode: (id: string | null) => void;
+  onDataChange?: () => void;
 }
 
-export default function WbsTree({ projectId, selectedNodeId, onSelectNode }: WbsTreeProps) {
+export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDataChange }: WbsTreeProps) {
   const [tree, setTree] = useState<WbsTreeNode[]>([]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode }: Wbs
       depth,
     });
     await loadTree();
+    onDataChange?.();
   }
 
   async function handleRename(id: string) {
@@ -65,12 +67,14 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode }: Wbs
     await supabase.from('wbs_nodes').update({ name: editName }).eq('id', id);
     setEditingId(null);
     await loadTree();
+    onDataChange?.();
   }
 
   async function handleDelete(id: string) {
     await supabase.from('wbs_nodes').delete().eq('id', id);
     if (selectedNodeId === id) onSelectNode(null);
     await loadTree();
+    onDataChange?.();
   }
 
   function renderNode(node: WbsTreeNode) {
