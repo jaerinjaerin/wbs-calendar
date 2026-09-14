@@ -136,6 +136,8 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
                 const d = e.start;
                 const date = d.toDate ? d.toDate() : new Date(d);
                 onClickDate(date.toISOString().split('T')[0]);
+                // ponytail: clear drag highlight so cancel doesn't leave stale selection
+                calRef.current?.getInstance?.().clearGridSelections();
               }}
               onBeforeUpdateEvent={(e: any) => {
                 const { event, changes } = e;
