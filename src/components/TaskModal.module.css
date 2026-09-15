@@ -15,6 +15,19 @@
   max-width: 500px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
+
+@media (max-width: 768px) {
+  .modal {
+    min-width: auto;
+    width: calc(100% - 32px);
+    max-width: none;
+    padding: 20px;
+  }
+  .row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
 .title {
   font-size: 16px;
   font-weight: 600;
