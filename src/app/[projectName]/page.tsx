@@ -1,22 +1,23 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { getSession, clearSession } from '@/lib/auth';
 import WbsTree from '@/components/WbsTree';
 import CalendarView from '@/components/CalendarView';
 import type { CalendarViewHandle } from '@/components/CalendarView';
 import ExportButtons from '@/components/ExportButtons';
 import TaskModal from '@/components/TaskModal';
 import TaskPeekPanel from '@/components/TaskPeekPanel';
-import type { Task, WbsNode, User, SessionData } from '@/types';
+import type { Task, WbsNode, User } from '@/types';
 import styles from './page.module.css';
 
-export default function CalendarPage() {
+export default function ProjectCalendarPage() {
+  const params = useParams<{ projectName: string }>();
   const router = useRouter();
   const calendarRef = useRef<CalendarViewHandle>(null);
-  const [session, setSession] = useState<SessionData | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectName, setProjectName] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [wbsNodes, setWbsNodes] = useState<WbsNode[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -24,27 +25,34 @@ export default function CalendarPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDefaultDate, setModalDefaultDate] = useState<string | null>(null);
-  const [projectName, setProjectName] = useState('');
+  const [notFound, setNotFound] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const loadData = useCallback(async (projectId: string) => {
-    const [{ data: t }, { data: n }, { data: u }, { data: p }] = await Promise.all([
+  const loadData = useCallback(async (pid: string) => {
+    const [{ data: t }, { data: n }, { data: u }] = await Promise.all([
       supabase.from('tasks').select('*'),
-      supabase.from('wbs_nodes').select('*').eq('project_id', projectId),
-      supabase.from('users').select('*').eq('project_id', projectId),
-      supabase.from('projects').select('name').eq('id', projectId).single(),
+      supabase.from('wbs_nodes').select('*').eq('project_id', pid),
+      supabase.from('users').select('*').eq('project_id', pid),
     ]);
     if (t) setTasks(t);
     if (n) setWbsNodes(n);
     if (u) setUsers(u);
-    if (p) setProjectName(p.name);
   }, []);
 
   useEffect(() => {
-    const s = getSession();
-    if (!s) { router.replace('/'); return; }
-    setSession(s);
-    loadData(s.project_id);
-  }, [router, loadData]);
+    const name = decodeURIComponent(params.projectName);
+    supabase
+      .from('projects')
+      .select('*')
+      .eq('name', name)
+      .single()
+      .then(({ data }) => {
+        if (!data) { setNotFound(true); return; }
+        setProjectId(data.id);
+        setProjectName(data.name);
+        loadData(data.id);
+      });
+  }, [params.projectName, loadData]);
 
   function filteredTasks(): Task[] {
     if (!selectedNodeId) return tasks;
@@ -59,7 +67,7 @@ export default function CalendarPage() {
 
   async function handleUpdateTask(taskId: string, changes: Partial<Task>) {
     await supabase.from('tasks').update(changes).eq('id', taskId);
-    if (session) await loadData(session.project_id);
+    if (projectId) await loadData(projectId);
   }
 
   async function handleSaveTask(task: Omit<Task, 'id'> & { id?: string }) {
@@ -70,29 +78,35 @@ export default function CalendarPage() {
       await supabase.from('tasks').insert(task);
     }
     setModalOpen(false);
-    if (session) await loadData(session.project_id);
+    if (projectId) await loadData(projectId);
   }
 
   async function handleDeleteTask(taskId: string) {
     await supabase.from('tasks').delete().eq('id', taskId);
     setSelectedTaskId(null);
-    if (session) await loadData(session.project_id);
+    if (projectId) await loadData(projectId);
   }
 
-  function handleLogout() {
-    clearSession();
-    router.replace('/');
+  if (notFound) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 16 }}>
+        <p style={{ fontSize: 16, color: '#5c6270' }}>프로젝트를 찾을 수 없습니다</p>
+        <button onClick={() => router.push('/')} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid #d8dce6', background: '#fff', cursor: 'pointer' }}>
+          ← 프로젝트 목록
+        </button>
+      </div>
+    );
   }
 
-  if (!session) return null;
+  if (!projectId) return null;
 
-  const currentUser = users.find((u) => u.id === session.user_id);
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
 
   return (
     <div className={styles.app}>
       <header className={styles.header}>
         <div className={styles.headerLeft}>
+          <button className={styles.backBtn} onClick={() => router.push('/')}>←</button>
           <span className={styles.logo}>WBS·Cal</span>
           <span className={styles.projectName}>{projectName}</span>
         </div>
@@ -106,24 +120,25 @@ export default function CalendarPage() {
           <button className={styles.addBtn} onClick={() => { setModalDefaultDate(null); setModalOpen(true); }}>
             + 작업 추가
           </button>
-          {session.role === 'pm' && (
-            <button className={styles.settingsBtn} onClick={() => router.push('/settings')}>
-              설정
-            </button>
-          )}
-          <button className={styles.avatar} onClick={handleLogout} title="로그아웃">
-            {currentUser?.name.charAt(0) ?? '?'}
+          <button className={styles.settingsBtn} onClick={() => router.push(`/settings?project=${projectId}`)}>
+            설정
+          </button>
+          <button className={styles.menuBtn} onClick={() => setSidebarOpen((v) => !v)} aria-label="WBS 메뉴">
+            ☰
           </button>
         </div>
       </header>
 
+      {sidebarOpen && <div className={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
       <div className={styles.body}>
-        <WbsTree
-          projectId={session.project_id}
-          selectedNodeId={selectedNodeId}
-          onSelectNode={setSelectedNodeId}
-          onDataChange={() => loadData(session.project_id)}
-        />
+        <div className={`${styles.sidebarWrap} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
+          <WbsTree
+            projectId={projectId}
+            selectedNodeId={selectedNodeId}
+            onSelectNode={(id) => { setSelectedNodeId(id); setSidebarOpen(false); }}
+            onDataChange={() => loadData(projectId)}
+          />
+        </div>
         <CalendarView
           ref={calendarRef}
           tasks={filteredTasks()}

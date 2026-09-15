@@ -41,8 +41,3 @@ export interface WbsTreeNode extends WbsNode {
   task_count: number;
 }
 
-export interface SessionData {
-  user_id: string;
-  project_id: string;
-  role: UserRole;
-}

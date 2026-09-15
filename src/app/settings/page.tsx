@@ -1,15 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { getSession, hashPin } from '@/lib/auth';
-import type { User, Project, SessionData } from '@/types';
+import { hashPin, verifyPin } from '@/lib/auth';
+import PinModal from '@/components/PinModal';
+import type { User, Project } from '@/types';
 import styles from './page.module.css';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [session, setSession] = useState<SessionData | null>(null);
+  const searchParams = useSearchParams();
+  const projectIdParam = searchParams.get('project');
+
+  const [verified, setVerified] = useState(false);
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pmUser, setPmUser] = useState<User | null>(null);
+
   const [users, setUsers] = useState<User[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [newUserName, setNewUserName] = useState('');
@@ -17,11 +24,29 @@ export default function SettingsPage() {
   const [projectName, setProjectName] = useState('');
 
   useEffect(() => {
-    const s = getSession();
-    if (!s || s.role !== 'pm') { router.replace('/'); return; }
-    setSession(s);
-    loadData(s.project_id);
-  }, [router]);
+    if (!projectIdParam) { router.replace('/'); return; }
+    supabase
+      .from('users')
+      .select('*')
+      .eq('project_id', projectIdParam)
+      .eq('role', 'pm')
+      .single()
+      .then(({ data }) => {
+        if (!data) { router.replace('/'); return; }
+        setPmUser(data);
+      });
+  }, [projectIdParam, router]);
+
+  async function handlePinSubmit(pin: string) {
+    if (!pmUser) return;
+    const valid = await verifyPin(pin, pmUser.pin_hash);
+    if (valid) {
+      setVerified(true);
+      loadData(pmUser.project_id);
+    } else {
+      setPinError('PIN이 올바르지 않습니다');
+    }
+  }
 
   async function loadData(projectId: string) {
     const [{ data: u }, { data: p }] = await Promise.all([
@@ -34,38 +59,57 @@ export default function SettingsPage() {
 
   async function handleAddUser(e: React.FormEvent) {
     e.preventDefault();
-    if (!session || !newUserName.trim() || newUserPin.length !== 4) return;
+    if (!projectIdParam || !newUserName.trim() || newUserPin.length !== 4) return;
     const pinHash = await hashPin(newUserPin);
     await supabase.from('users').insert({
       name: newUserName.trim(),
       pin_hash: pinHash,
       role: 'member',
-      project_id: session.project_id,
+      project_id: projectIdParam,
     });
     setNewUserName('');
     setNewUserPin('');
-    await loadData(session.project_id);
+    await loadData(projectIdParam);
   }
 
   async function handleDeleteUser(userId: string) {
-    if (userId === session?.user_id) return;
+    if (userId === pmUser?.id) return;
     await supabase.from('users').delete().eq('id', userId);
-    if (session) await loadData(session.project_id);
+    if (projectIdParam) await loadData(projectIdParam);
   }
 
   async function handleUpdateProjectName() {
     if (!project || !projectName.trim()) return;
     await supabase.from('projects').update({ name: projectName.trim() }).eq('id', project.id);
-    if (session) await loadData(session.project_id);
+    if (projectIdParam) await loadData(projectIdParam);
   }
 
-  if (!session) return null;
+  if (!pmUser) return null;
+
+  if (!verified) {
+    return (
+      <PinModal
+        userName="설정 접근"
+        onSubmit={handlePinSubmit}
+        onClose={() => {
+          if (project) {
+            router.push(`/${encodeURIComponent(project.name)}`);
+          } else {
+            router.push('/');
+          }
+        }}
+        error={pinError}
+      />
+    );
+  }
+
+  const backPath = project ? `/${encodeURIComponent(project.name)}` : '/';
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>설정</h1>
-        <button className={styles.backBtn} onClick={() => router.push('/calendar')}>← 캘린더로</button>
+        <button className={styles.backBtn} onClick={() => router.push(backPath)}>← 캘린더로</button>
       </div>
 
       <section className={styles.section}>
@@ -87,7 +131,7 @@ export default function SettingsPage() {
             <div key={u.id} className={styles.userRow}>
               <span className={styles.userName}>{u.name}</span>
               <span className={styles.userRole}>{u.role === 'pm' ? 'PM' : '팀원'}</span>
-              {u.id !== session.user_id && (
+              {u.id !== pmUser.id && (
                 <button className={styles.deleteBtn} onClick={() => handleDeleteUser(u.id)}>삭제</button>
               )}
             </div>

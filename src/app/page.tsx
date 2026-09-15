@@ -3,17 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { hashPin, verifyPin, saveSession, getSession } from '@/lib/auth';
-import PinModal from '@/components/PinModal';
-import type { User } from '@/types';
+import { hashPin } from '@/lib/auth';
+import type { Project } from '@/types';
 import styles from './page.module.css';
 
-export default function LoginPage() {
+export default function ProjectListPage() {
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [pinError, setPinError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   const [setupProject, setSetupProject] = useState('');
   const [setupName, setSetupName] = useState('');
@@ -22,33 +20,13 @@ export default function LoginPage() {
   const [setupLoading, setSetupLoading] = useState(false);
 
   useEffect(() => {
-    const session = getSession();
-    if (session) {
-      router.replace('/calendar');
-      return;
-    }
-    loadUsers();
-  }, [router]);
+    loadProjects();
+  }, []);
 
-  async function loadUsers() {
-    const { data } = await supabase.from('users').select('*');
-    if (data) setUsers(data);
+  async function loadProjects() {
+    const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+    if (data) setProjects(data);
     setLoaded(true);
-  }
-
-  async function handlePinSubmit(pin: string) {
-    if (!selectedUser) return;
-    const valid = await verifyPin(pin, selectedUser.pin_hash);
-    if (valid) {
-      saveSession({
-        user_id: selectedUser.id,
-        project_id: selectedUser.project_id,
-        role: selectedUser.role,
-      });
-      router.push('/calendar');
-    } else {
-      setPinError('PIN이 올바르지 않습니다');
-    }
   }
 
   async function handleSetup(e: React.FormEvent) {
@@ -86,19 +64,34 @@ export default function LoginPage() {
     }
 
     await supabase.from('projects').update({ owner_id: user.id }).eq('id', project.id);
-
-    saveSession({ user_id: user.id, project_id: project.id, role: 'pm' });
-    router.push('/calendar');
+    router.push(`/${encodeURIComponent(project.name)}`);
   }
 
   if (!loaded) return null;
 
-  if (users.length === 0) {
-    return (
-      <div className={styles.container}>
-        <h1 className={styles.logo}>WBS·Cal</h1>
-        <p className={styles.subtitle}>첫 프로젝트를 만들어주세요</p>
+  return (
+    <div className={styles.container}>
+      <h1 className={styles.logo}>WBS·Cal</h1>
+      <p className={styles.subtitle}>프로젝트를 선택하세요</p>
+
+      {projects.length > 0 && (
+        <div className={styles.grid}>
+          {projects.map((p) => (
+            <button
+              key={p.id}
+              className={styles.card}
+              onClick={() => router.push(`/${encodeURIComponent(p.name)}`)}
+            >
+              <div className={styles.avatar}>{p.name.charAt(0)}</div>
+              <span className={styles.name}>{p.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {(showForm || projects.length === 0) && (
         <form className={styles.setupForm} onSubmit={handleSetup}>
+          <p className={styles.formTitle}>새 프로젝트 만들기</p>
           <input
             className={styles.setupInput}
             placeholder="프로젝트명"
@@ -114,7 +107,7 @@ export default function LoginPage() {
           />
           <input
             className={styles.setupInput}
-            placeholder="PIN 4자리"
+            placeholder="PIN 4자리 (설정 접근용)"
             type="password"
             inputMode="numeric"
             maxLength={4}
@@ -123,40 +116,20 @@ export default function LoginPage() {
           />
           {setupError && <p className={styles.setupError}>{setupError}</p>}
           <button className={styles.setupBtn} type="submit" disabled={setupLoading}>
-            {setupLoading ? '생성 중...' : '시작하기'}
+            {setupLoading ? '생성 중...' : '만들기'}
           </button>
+          {projects.length > 0 && (
+            <button type="button" className={styles.cancelBtn} onClick={() => setShowForm(false)}>
+              취소
+            </button>
+          )}
         </form>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className={styles.container}>
-      <h1 className={styles.logo}>WBS·Cal</h1>
-      <p className={styles.subtitle}>프로필을 선택하세요</p>
-      <div className={styles.grid}>
-        {users.map((user) => (
-          <button
-            key={user.id}
-            className={styles.card}
-            onClick={() => { setSelectedUser(user); setPinError(null); }}
-          >
-            <div className={styles.avatar}>
-              {user.name.charAt(0)}
-            </div>
-            <span className={styles.name}>{user.name}</span>
-            {user.role === 'pm' && <span className={styles.badge}>PM</span>}
-          </button>
-        ))}
-      </div>
-
-      {selectedUser && (
-        <PinModal
-          userName={selectedUser.name}
-          onSubmit={handlePinSubmit}
-          onClose={() => setSelectedUser(null)}
-          error={pinError}
-        />
+      {!showForm && projects.length > 0 && (
+        <button className={styles.newProjectBtn} onClick={() => setShowForm(true)}>
+          + 새 프로젝트
+        </button>
       )}
     </div>
   );
