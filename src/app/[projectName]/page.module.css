@@ -1,0 +1,156 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 56px;
+  background: #1e2233;
+  flex-shrink: 0;
+}
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.backBtn {
+  background: none;
+  border: none;
+  color: #6b8aff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.backBtn:hover {
+  background: rgba(255,255,255,0.08);
+}
+.logo {
+  font-family: monospace;
+  font-weight: 500;
+  font-size: 15px;
+  color: #6b8aff;
+}
+.projectName {
+  color: #f0f1f5;
+  font-size: 13px;
+  font-weight: 500;
+}
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.addBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  background: #3563e9;
+  color: #fff;
+  cursor: pointer;
+}
+.settingsBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.08);
+  color: #f0f1f5;
+  cursor: pointer;
+}
+.menuBtn {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.08);
+  color: #f0f1f5;
+  font-size: 18px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+.sidebarWrap {
+  display: contents;
+}
+.sidebarOverlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 12px;
+    height: 48px;
+  }
+  .headerLeft {
+    gap: 8px;
+  }
+  .projectName {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .headerRight {
+    gap: 6px;
+  }
+  .addBtn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .settingsBtn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .menuBtn {
+    display: flex;
+  }
+  .sidebarWrap {
+    display: block;
+    position: fixed;
+    top: 48px;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+  .sidebarWrap > * {
+    height: 100%;
+  }
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+  .sidebarOverlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    top: 48px;
+    background: rgba(0,0,0,0.3);
+    z-index: 39;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    font-size: 13px;
+  }
+  .projectName {
+    display: none;
+  }
+}

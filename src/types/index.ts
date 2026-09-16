@@ -4,6 +4,7 @@ export type TaskStatus = 'todo' | 'in_progress' | 'done';
 export interface Project {
   id: string;
   name: string;
+  admin_password_hash: string | null;
   created_at: string;
   owner_id: string | null;
 }
@@ -11,7 +12,7 @@ export interface Project {
 export interface User {
   id: string;
   name: string;
-  pin_hash: string;
+  pin_hash: string | null;
   role: UserRole;
   project_id: string;
 }
@@ -41,8 +42,3 @@ export interface WbsTreeNode extends WbsNode {
   task_count: number;
 }
 
-export interface SessionData {
-  user_id: string;
-  project_id: string;
-  role: UserRole;
-}

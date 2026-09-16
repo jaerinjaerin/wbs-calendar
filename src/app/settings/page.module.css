@@ -21,6 +21,34 @@
   font-size: 13px;
   cursor: pointer;
 }
+.authForm {
+  background: #fff;
+  border: 1px solid #e8ecf2;
+  border-radius: 10px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.authLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #5c6270;
+}
+.authError {
+  font-size: 12px;
+  color: #c74060;
+}
+.authBtn {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: #3563e9;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
 .section {
   background: #fff;
   border: 1px solid #e8ecf2;
@@ -33,10 +61,6 @@
   font-weight: 600;
   margin-bottom: 14px;
 }
-.row {
-  display: flex;
-  gap: 8px;
-}
 .input {
   padding: 8px 10px;
   border: 1px solid #d8dce6;
@@ -45,9 +69,27 @@
   font-family: inherit;
   outline: none;
   flex: 1;
+  width: 100%;
 }
 .input:focus { border-color: #3563e9; }
-.saveBtn, .addBtn {
+.saveBtn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #3563e9;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.saveBtnDisabled {
+  background: #c0c6d2;
+  cursor: not-allowed;
+}
+.addBtn {
   padding: 8px 18px;
   border: none;
   border-radius: 6px;
@@ -92,4 +134,20 @@
 .addForm {
   display: flex;
   gap: 8px;
+}
+.dangerBtn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #c74060;
+  border-radius: 8px;
+  background: transparent;
+  color: #c74060;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 12px;
+}
+.dangerBtn:hover {
+  background: #fef0f3;
 }

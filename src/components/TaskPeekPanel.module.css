@@ -73,3 +73,10 @@
   cursor: pointer;
 }
 .deleteBtn:hover { background: #fef0f3; }
+
+@media (max-width: 768px) {
+  .panel {
+    width: 100%;
+    top: 48px;
+  }
+}
