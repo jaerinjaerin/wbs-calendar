@@ -15,7 +15,7 @@ export default function ProjectListPage() {
 
   const [setupProject, setSetupProject] = useState('');
   const [setupName, setSetupName] = useState('');
-  const [setupPin, setSetupPin] = useState('');
+  const [setupPassword, setSetupPassword] = useState('');
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupLoading, setSetupLoading] = useState(false);
 
@@ -31,16 +31,17 @@ export default function ProjectListPage() {
 
   async function handleSetup(e: React.FormEvent) {
     e.preventDefault();
-    if (!setupProject.trim() || !setupName.trim() || !/^\d{4}$/.test(setupPin)) {
-      setSetupError('모든 필드를 입력하세요 (PIN은 숫자 4자리)');
+    if (!setupProject.trim() || !setupName.trim() || !setupPassword.trim()) {
+      setSetupError('모든 필드를 입력하세요');
       return;
     }
     setSetupLoading(true);
     setSetupError(null);
 
+    const adminHash = await hashPin(setupPassword);
     const { data: project, error: pErr } = await supabase
       .from('projects')
-      .insert({ name: setupProject.trim() })
+      .insert({ name: setupProject.trim(), admin_password_hash: adminHash })
       .select()
       .single();
 
@@ -50,10 +51,9 @@ export default function ProjectListPage() {
       return;
     }
 
-    const pinHash = await hashPin(setupPin);
     const { data: user, error: uErr } = await supabase
       .from('users')
-      .insert({ name: setupName.trim(), pin_hash: pinHash, role: 'pm', project_id: project.id })
+      .insert({ name: setupName.trim(), pin_hash: null, role: 'pm', project_id: project.id })
       .select()
       .single();
 
@@ -107,12 +107,10 @@ export default function ProjectListPage() {
           />
           <input
             className={styles.setupInput}
-            placeholder="PIN 4자리 (설정 접근용)"
+            placeholder="관리자 비밀번호 (설정 접근용)"
             type="password"
-            inputMode="numeric"
-            maxLength={4}
-            value={setupPin}
-            onChange={(e) => setSetupPin(e.target.value.replace(/\D/g, ''))}
+            value={setupPassword}
+            onChange={(e) => setSetupPassword(e.target.value)}
           />
           {setupError && <p className={styles.setupError}>{setupError}</p>}
           <button className={styles.setupBtn} type="submit" disabled={setupLoading}>

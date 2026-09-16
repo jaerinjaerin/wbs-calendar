@@ -1,6 +1,7 @@
 create table projects (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  admin_password_hash text,
   created_at timestamptz default now(),
   owner_id uuid
 );
@@ -8,7 +9,7 @@ create table projects (
 create table users (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  pin_hash text not null,
+  pin_hash text,
   role text not null check (role in ('pm', 'member')),
   project_id uuid not null references projects(id) on delete cascade
 );

@@ -1,50 +1,52 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { hashPin, verifyPin } from '@/lib/auth';
-import PinModal from '@/components/PinModal';
+import { verifyPin } from '@/lib/auth';
 import type { User, Project } from '@/types';
 import styles from './page.module.css';
 
-export default function SettingsPage() {
+function SettingsInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const projectIdParam = searchParams.get('project');
 
+  const [project, setProject] = useState<Project | null>(null);
   const [verified, setVerified] = useState(false);
-  const [pinError, setPinError] = useState<string | null>(null);
-  const [pmUser, setPmUser] = useState<User | null>(null);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const [users, setUsers] = useState<User[]>([]);
-  const [project, setProject] = useState<Project | null>(null);
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserPin, setNewUserPin] = useState('');
   const [projectName, setProjectName] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+
+  const initialName = useRef('');
+  const initialUserIds = useRef<string[]>([]);
 
   useEffect(() => {
     if (!projectIdParam) { router.replace('/'); return; }
     supabase
-      .from('users')
+      .from('projects')
       .select('*')
-      .eq('project_id', projectIdParam)
-      .eq('role', 'pm')
+      .eq('id', projectIdParam)
       .single()
       .then(({ data }) => {
         if (!data) { router.replace('/'); return; }
-        setPmUser(data);
+        setProject(data);
       });
   }, [projectIdParam, router]);
 
-  async function handlePinSubmit(pin: string) {
-    if (!pmUser) return;
-    const valid = await verifyPin(pin, pmUser.pin_hash);
+  async function handleAuth(e: React.FormEvent) {
+    e.preventDefault();
+    if (!project?.admin_password_hash) return;
+    const valid = await verifyPin(password, project.admin_password_hash);
     if (valid) {
       setVerified(true);
-      loadData(pmUser.project_id);
+      setAuthError(null);
+      loadData(project.id);
     } else {
-      setPinError('PIN이 올바르지 않습니다');
+      setAuthError('비밀번호가 올바르지 않습니다');
     }
   }
 
@@ -53,57 +55,82 @@ export default function SettingsPage() {
       supabase.from('users').select('*').eq('project_id', projectId),
       supabase.from('projects').select('*').eq('id', projectId).single(),
     ]);
-    if (u) setUsers(u);
-    if (p) { setProject(p); setProjectName(p.name); }
+    if (u) {
+      setUsers(u);
+      initialUserIds.current = u.map((x) => x.id).sort();
+    }
+    if (p) {
+      setProject(p);
+      setProjectName(p.name);
+      initialName.current = p.name;
+    }
   }
 
   async function handleAddUser(e: React.FormEvent) {
     e.preventDefault();
-    if (!projectIdParam || !newUserName.trim() || newUserPin.length !== 4) return;
-    const pinHash = await hashPin(newUserPin);
+    if (!project || !newUserName.trim()) return;
     await supabase.from('users').insert({
       name: newUserName.trim(),
-      pin_hash: pinHash,
+      pin_hash: null,
       role: 'member',
-      project_id: projectIdParam,
+      project_id: project.id,
     });
     setNewUserName('');
-    setNewUserPin('');
-    await loadData(projectIdParam);
+    await loadData(project.id);
   }
 
   async function handleDeleteUser(userId: string) {
-    if (userId === pmUser?.id) return;
+    if (!project) return;
     await supabase.from('users').delete().eq('id', userId);
-    if (projectIdParam) await loadData(projectIdParam);
+    await loadData(project.id);
   }
 
-  async function handleUpdateProjectName() {
+  async function handleSave() {
     if (!project || !projectName.trim()) return;
-    await supabase.from('projects').update({ name: projectName.trim() }).eq('id', project.id);
-    if (projectIdParam) await loadData(projectIdParam);
+    if (projectName.trim() !== initialName.current) {
+      await supabase.from('projects').update({ name: projectName.trim() }).eq('id', project.id);
+    }
+    await loadData(project.id);
   }
 
-  if (!pmUser) return null;
+  async function handleDeleteProject() {
+    if (!project) return;
+    if (!confirm(`"${project.name}" 프로젝트를 삭제하시겠습니까?\n모든 데이터가 삭제됩니다.`)) return;
+    await supabase.from('projects').delete().eq('id', project.id);
+    router.replace('/');
+  }
+
+  if (!project) return null;
 
   if (!verified) {
+    const backPath = `/${encodeURIComponent(project.name)}`;
     return (
-      <PinModal
-        userName="설정 접근"
-        onSubmit={handlePinSubmit}
-        onClose={() => {
-          if (project) {
-            router.push(`/${encodeURIComponent(project.name)}`);
-          } else {
-            router.push('/');
-          }
-        }}
-        error={pinError}
-      />
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>설정</h1>
+          <button className={styles.backBtn} onClick={() => router.push(backPath)}>← 캘린더로</button>
+        </div>
+        <form className={styles.authForm} onSubmit={handleAuth}>
+          <p className={styles.authLabel}>관리자 비밀번호를 입력하세요</p>
+          <input
+            className={styles.input}
+            type="password"
+            placeholder="비밀번호"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoFocus
+          />
+          {authError && <p className={styles.authError}>{authError}</p>}
+          <button className={styles.authBtn} type="submit">확인</button>
+        </form>
+      </div>
     );
   }
 
-  const backPath = project ? `/${encodeURIComponent(project.name)}` : '/';
+  const isDirty = projectName.trim() !== initialName.current
+    || users.map((u) => u.id).sort().join() !== initialUserIds.current.join();
+
+  const backPath = `/${encodeURIComponent(project.name)}`;
 
   return (
     <div className={styles.container}>
@@ -114,14 +141,11 @@ export default function SettingsPage() {
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>프로젝트</h2>
-        <div className={styles.row}>
-          <input
-            className={styles.input}
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-          />
-          <button className={styles.saveBtn} onClick={handleUpdateProjectName}>저장</button>
-        </div>
+        <input
+          className={styles.input}
+          value={projectName}
+          onChange={(e) => setProjectName(e.target.value)}
+        />
       </section>
 
       <section className={styles.section}>
@@ -131,7 +155,7 @@ export default function SettingsPage() {
             <div key={u.id} className={styles.userRow}>
               <span className={styles.userName}>{u.name}</span>
               <span className={styles.userRole}>{u.role === 'pm' ? 'PM' : '팀원'}</span>
-              {u.id !== pmUser.id && (
+              {u.role !== 'pm' && (
                 <button className={styles.deleteBtn} onClick={() => handleDeleteUser(u.id)}>삭제</button>
               )}
             </div>
@@ -145,18 +169,29 @@ export default function SettingsPage() {
             onChange={(e) => setNewUserName(e.target.value)}
             required
           />
-          <input
-            className={styles.input}
-            placeholder="PIN (4자리)"
-            value={newUserPin}
-            onChange={(e) => setNewUserPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            maxLength={4}
-            inputMode="numeric"
-            required
-          />
           <button className={styles.addBtn} type="submit">추가</button>
         </form>
       </section>
+
+      <button
+        className={`${styles.saveBtn} ${!isDirty ? styles.saveBtnDisabled : ''}`}
+        onClick={handleSave}
+        disabled={!isDirty}
+      >
+        저장
+      </button>
+
+      <button className={styles.dangerBtn} onClick={handleDeleteProject}>
+        프로젝트 삭제
+      </button>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense>
+      <SettingsInner />
+    </Suspense>
   );
 }
