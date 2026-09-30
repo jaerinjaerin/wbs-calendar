@@ -23,7 +23,8 @@ export default function ProjectCalendarPage() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalDefaultDate, setModalDefaultDate] = useState<string | null>(null);
+  const [modalDefaultStart, setModalDefaultStart] = useState<string | null>(null);
+  const [modalDefaultEnd, setModalDefaultEnd] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -90,7 +91,7 @@ export default function ProjectCalendarPage() {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-md">
         <p className="text-body-md text-muted">프로젝트를 찾을 수 없습니다</p>
-        <button className="py-xs px-5 rounded-md border border-hairline bg-canvas cursor-pointer" onClick={() => router.push('/')}>
+        <button className="py-xs px-5 rounded-md border border-hairline bg-canvas text-[13px] font-medium cursor-pointer" onClick={() => router.push('/')}>
           ← 프로젝트 목록
         </button>
       </div>
@@ -105,19 +106,19 @@ export default function ProjectCalendarPage() {
     <div className="flex flex-col h-screen overflow-hidden">
       <header className="flex items-center justify-between px-3 h-12 md:px-5 md:h-14 bg-surface-dark shrink-0">
         <div className="flex items-center gap-xs md:gap-sm">
-          <button className="bg-transparent border-none text-accent text-base cursor-pointer px-xs py-xxs rounded-xs hover:bg-white/[0.08]" onClick={() => router.push('/')}>←</button>
-          <span className="font-display text-[13px] md:text-[15px] font-medium text-accent">WBS·Cal</span>
-          <span className="text-on-dark text-caption font-medium max-w-[100px] md:max-w-none truncate max-[480px]:hidden">{projectName}</span>
+          <button className="bg-transparent border-none text-on-dark text-base cursor-pointer px-xs py-xxs rounded-md hover:bg-white/[0.08]" onClick={() => router.push('/')}>←</button>
+          <span className="font-display text-[13px] md:text-[15px] font-medium text-on-dark">WBS·Cal</span>
+          <span className="text-on-dark-soft text-caption font-medium max-w-[100px] md:max-w-none truncate max-[480px]:hidden">{projectName}</span>
         </div>
         <div className="flex items-center gap-1.5 md:gap-xs">
           <ExportButtons tasks={filteredTasks()} wbsNodes={wbsNodes} users={users} calendarRef={calendarRef} />
-          <button className="px-2.5 md:px-3.5 py-1.5 rounded-sm text-[11px] md:text-xs font-medium border-none bg-accent text-white cursor-pointer" onClick={() => { setModalDefaultDate(null); setModalOpen(true); }}>
+          <button className="px-2.5 md:px-3.5 py-1.5 rounded-md text-[11px] md:text-xs font-medium border-none bg-on-primary text-primary cursor-pointer" onClick={() => { setModalDefaultStart(null); setModalDefaultEnd(null); setModalOpen(true); }}>
             + 작업 추가
           </button>
-          <button className="px-2.5 md:px-3.5 py-1.5 rounded-sm text-[11px] md:text-xs font-medium border border-white/10 bg-white/[0.08] text-on-dark cursor-pointer" onClick={() => router.push(`/settings?project=${projectId}`)}>
+          <button className="px-2.5 md:px-3.5 py-1.5 rounded-md text-[11px] md:text-xs font-medium border border-white/10 bg-white/[0.08] text-on-dark cursor-pointer" onClick={() => router.push(`/settings?project=${projectId}`)}>
             설정
           </button>
-          <button className="flex md:hidden w-9 h-9 rounded-sm border border-white/10 bg-white/[0.08] text-on-dark text-lg cursor-pointer items-center justify-center" onClick={() => setSidebarOpen((v) => !v)} aria-label="WBS 메뉴">
+          <button className="flex md:hidden w-9 h-9 rounded-md border border-white/10 bg-white/[0.08] text-on-dark text-lg cursor-pointer items-center justify-center" onClick={() => setSidebarOpen((v) => !v)} aria-label="WBS 메뉴">
             ☰
           </button>
         </div>
@@ -140,7 +141,7 @@ export default function ProjectCalendarPage() {
           users={users}
           onClickEvent={(id) => setSelectedTaskId(id)}
           onUpdateTask={handleUpdateTask}
-          onClickDate={(date) => { setModalDefaultDate(date); setModalOpen(true); }}
+          onSelectDateRange={(start, end) => { setModalDefaultStart(start); setModalDefaultEnd(end); setModalOpen(true); }}
         />
       </div>
 
@@ -148,7 +149,8 @@ export default function ProjectCalendarPage() {
         <TaskModal
           wbsNodes={wbsNodes}
           users={users}
-          defaultDate={modalDefaultDate}
+          defaultStart={modalDefaultStart}
+          defaultEnd={modalDefaultEnd}
           onSave={handleSaveTask}
           onClose={() => setModalOpen(false)}
         />

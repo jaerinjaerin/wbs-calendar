@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { Task, WbsNode, User, TaskStatus } from '@/types';
 
 interface TaskPeekPanelProps {
@@ -12,12 +13,18 @@ interface TaskPeekPanelProps {
 }
 
 const statusCls: Record<string, string> = {
-  todo: 'bg-gray-100 text-muted-soft',
-  in_progress: 'bg-amber-50 text-amber-500',
-  done: 'bg-emerald-50 text-emerald-600',
+  todo: 'bg-surface-card text-muted-soft',
+  in_progress: 'bg-warning/10 text-warning',
+  done: 'bg-success/10 text-success',
 };
 
 export default function TaskPeekPanel({ task, wbsNodes, users, onUpdate, onDelete, onClose }: TaskPeekPanelProps) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
   const node = wbsNodes.find((n) => n.id === task.wbs_node_id);
   const assignee = task.assignee_id ? users.find((u) => u.id === task.assignee_id) : null;
 
@@ -65,7 +72,7 @@ export default function TaskPeekPanel({ task, wbsNodes, users, onUpdate, onDelet
           </span>
         </div>
       </div>
-      <button className="mt-auto py-xs border border-error rounded-sm bg-transparent text-error text-xs cursor-pointer hover:bg-red-50" onClick={onDelete}>작업 삭제</button>
+      <button className="mt-auto py-xs border border-error rounded-md bg-transparent text-error text-xs cursor-pointer hover:bg-error/5" onClick={onDelete}>작업 삭제</button>
     </div>
   );
 }

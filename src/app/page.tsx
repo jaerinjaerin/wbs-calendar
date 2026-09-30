@@ -83,7 +83,7 @@ export default function ProjectListPage() {
               className="flex flex-col items-center gap-xs py-lg px-md bg-canvas border-2 border-hairline rounded-lg cursor-pointer transition-colors hover:border-primary"
               onClick={() => router.push(`/${encodeURIComponent(p.name)}`)}
             >
-              <div className="w-12 h-12 rounded-full bg-surface-soft text-accent flex items-center justify-center text-lg font-semibold">
+              <div className="w-12 h-12 rounded-full bg-surface-soft text-primary flex items-center justify-center text-lg font-semibold">
                 {p.name.charAt(0)}
               </div>
               <span className="text-body-sm font-medium">{p.name}</span>

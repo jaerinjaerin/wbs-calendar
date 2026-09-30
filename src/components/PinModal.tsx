@@ -17,6 +17,12 @@ export default function PinModal({ userName, onSubmit, onClose, error }: PinModa
     inputRefs.current[0]?.focus();
   }, []);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
   function handleChange(index: number, value: string) {
     if (!/^\d?$/.test(value)) return;
     const next = [...digits];

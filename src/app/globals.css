@@ -7,3 +7,124 @@
 body {
   @apply font-sans bg-canvas text-body;
 }
+
+/* TUI Calendar — design system overrides */
+.toastui-calendar-layout {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.toastui-calendar-day-name__name,
+.toastui-calendar-day-name__date {
+  font-family: inherit;
+  color: #111111;
+}
+
+.toastui-calendar-weekday-grid-date {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.toastui-calendar-weekday-grid-date-decorator {
+  background-color: #111111 !important;
+  border-radius: 9999px;
+  color: #ffffff !important;
+}
+
+.toastui-calendar-holiday {
+  color: #ef4444;
+}
+
+.toastui-calendar-day-name-item:first-child .toastui-calendar-day-name__name,
+.toastui-calendar-day-name-item:first-child .toastui-calendar-day-name__date {
+  color: #ef4444;
+}
+
+.toastui-calendar-weekday-grid .toastui-calendar-daygrid-cell:nth-child(7n + 1) .toastui-calendar-weekday-grid-date {
+  color: #ef4444;
+}
+
+/* Grid lines */
+.toastui-calendar-daygrid-cell {
+  border-color: #e5e7eb;
+}
+
+.toastui-calendar-column {
+  border-color: #e5e7eb;
+}
+
+.toastui-calendar-panel-resizer {
+  border-color: #e5e7eb;
+}
+
+.toastui-calendar-gridline-half {
+  border-color: #f3f4f6;
+}
+
+.toastui-calendar-timegrid-time {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+/* Event bars */
+.toastui-calendar-weekday-event {
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.toastui-calendar-weekday-event-title {
+  font-weight: 500;
+}
+
+/* Grid selection (drag) */
+.toastui-calendar-grid-selection {
+  background-color: rgba(17, 17, 17, 0.06);
+  border: 1px solid rgba(17, 17, 17, 0.15);
+  border-radius: 4px;
+}
+
+/* Day names header row */
+.toastui-calendar-day-names {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.toastui-calendar-day-name-item {
+  border-left-color: #e5e7eb;
+}
+
+/* Week view time column */
+.toastui-calendar-timegrid-time-column .toastui-calendar-timegrid-time {
+  color: #898989;
+}
+
+.toastui-calendar-timezone-labels-slot {
+  background-color: #ffffff;
+  border-bottom-color: #e5e7eb;
+}
+
+.toastui-calendar-timezone-labels-slot .toastui-calendar-timegrid-timezone-label {
+  background-color: #ffffff;
+  border-right-color: #e5e7eb;
+}
+
+/* "more events" link */
+.toastui-calendar-grid-cell-more-events {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Now indicator */
+.toastui-calendar-timegrid-now-indicator-marker {
+  background-color: #ef4444;
+}
+
+.toastui-calendar-timegrid-now-indicator-today {
+  border-color: #ef4444;
+}
+
+.toastui-calendar-timegrid-current-time {
+  color: #ef4444;
+  font-weight: 600;
+}

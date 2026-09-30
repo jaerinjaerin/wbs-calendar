@@ -4,6 +4,9 @@ import { useRef, useEffect, forwardRef, useImperativeHandle, useState } from 're
 import type { ComponentType } from 'react';
 import '@toast-ui/calendar/dist/toastui-calendar.min.css';
 import type { Task, WbsNode, User } from '@/types';
+import { getHolidays } from '@/lib/holidays';
+
+function pad(n: number) { return n.toString().padStart(2, '0'); }
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -11,7 +14,7 @@ interface CalendarViewProps {
   users: User[];
   onClickEvent: (taskId: string) => void;
   onUpdateTask: (taskId: string, changes: Partial<Task>) => void;
-  onClickDate: (date: string) => void;
+  onSelectDateRange: (start: string, end: string) => void;
 }
 
 export interface CalendarViewHandle {
@@ -47,7 +50,7 @@ function toCalendarEvents(tasks: Task[], users: User[]) {
 }
 
 const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
-  function CalendarView({ tasks, wbsNodes, users, onClickEvent, onUpdateTask, onClickDate }, ref) {
+  function CalendarView({ tasks, wbsNodes, users, onClickEvent, onUpdateTask, onSelectDateRange }, ref) {
     const calRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<'month' | 'week'>('month');
@@ -89,19 +92,36 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
       updateDateLabel();
     }
 
-    const calendars = toCalendarInfos(wbsNodes);
-    const events = toCalendarEvents(tasks, users);
+    const calendars = [
+      ...toCalendarInfos(wbsNodes),
+      { id: '_holiday', name: '공휴일', backgroundColor: '#fef2f2', borderColor: '#ef4444' },
+    ];
+
+    const currentYear = new Date().getFullYear();
+    const holidayEvents = [currentYear - 1, currentYear, currentYear + 1].flatMap((y) =>
+      getHolidays(y).map((h) => ({
+        id: `hol_${h.date}`,
+        calendarId: '_holiday',
+        title: h.name,
+        start: h.date,
+        end: h.date,
+        category: 'allday' as const,
+        isReadOnly: true,
+      }))
+    );
+
+    const events = [...toCalendarEvents(tasks, users), ...holidayEvents];
 
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-2 px-3 md:p-sm md:px-5 bg-canvas border-b border-hairline flex-wrap gap-xs">
           <div className="flex items-center gap-xs">
-            <button className="w-[30px] h-[30px] rounded-sm border border-hairline bg-canvas cursor-pointer text-sm flex items-center justify-center hover:bg-surface-card" onClick={() => navigate('prev')}>‹</button>
+            <button className="w-[30px] h-[30px] rounded-md border border-hairline bg-canvas cursor-pointer text-sm flex items-center justify-center hover:bg-surface-card" onClick={() => navigate('prev')}>‹</button>
             <span className="text-base md:text-title-md min-w-0 md:min-w-[140px]">{dateLabel}</span>
-            <button className="w-[30px] h-[30px] rounded-sm border border-hairline bg-canvas cursor-pointer text-sm flex items-center justify-center hover:bg-surface-card" onClick={() => navigate('next')}>›</button>
-            <button className="text-[11px] md:text-xs px-2 md:px-3 py-1 rounded-xs border border-hairline bg-canvas cursor-pointer font-medium" onClick={() => navigate('today')}>오늘</button>
+            <button className="w-[30px] h-[30px] rounded-md border border-hairline bg-canvas cursor-pointer text-sm flex items-center justify-center hover:bg-surface-card" onClick={() => navigate('next')}>›</button>
+            <button className="text-[11px] md:text-xs px-2 md:px-3 py-1 rounded-md border border-hairline bg-canvas cursor-pointer font-medium" onClick={() => navigate('today')}>오늘</button>
           </div>
-          <div className="flex border border-hairline rounded-sm overflow-hidden divide-x divide-hairline">
+          <div className="flex border border-hairline rounded-md overflow-hidden divide-x divide-hairline">
             <button
               className={`px-2.5 md:px-4 py-1.5 text-[11px] md:text-xs font-medium border-none cursor-pointer ${view === 'month' ? 'bg-primary text-on-primary' : 'bg-canvas'}`}
               onClick={() => setView('month')}
@@ -132,10 +152,16 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
               gridSelection={true}
               onClickEvent={(e: any) => onClickEvent(e.event.id)}
               onSelectDateTime={(e: any) => {
-                const d = e.start;
-                const date = d.toDate ? d.toDate() : new Date(d);
-                onClickDate(date.toISOString().split('T')[0]);
-                // ponytail: clear drag highlight so cancel doesn't leave stale selection
+                const toLocal = (v: any) => {
+                  const d = v.toDate ? v.toDate() : new Date(v);
+                  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                };
+                const start = toLocal(e.start);
+                const end = toLocal(e.end);
+                // ponytail: TUI single-click end = next day (exclusive), drag end = last cell (inclusive)
+                const diffDays = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
+                const actualEnd = diffDays <= 1 ? start : end;
+                onSelectDateRange(start, actualEnd);
                 calRef.current?.getInstance?.().clearGridSelections();
               }}
               onBeforeUpdateEvent={(e: any) => {
@@ -145,14 +171,16 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
                 if (inst) {
                   inst.updateEvent(event.id, event.calendarId, changes);
                 }
+                const toLocal = (v: any) => {
+                  const d = v.toDate ? v.toDate() : new Date(v);
+                  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                };
                 const updates: Partial<Task> = {};
                 if (changes.start) {
-                  const s = changes.start.toDate ? changes.start.toDate() : new Date(changes.start);
-                  updates.start_date = s.toISOString().split('T')[0];
+                  updates.start_date = toLocal(changes.start);
                 }
                 if (changes.end) {
-                  const ed = changes.end.toDate ? changes.end.toDate() : new Date(changes.end);
-                  updates.end_date = ed.toISOString().split('T')[0];
+                  updates.end_date = toLocal(changes.end);
                 }
                 if (Object.keys(updates).length > 0) {
                   onUpdateTask(event.id, updates);
