@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import styles from './PinModal.module.css';
 
 interface PinModalProps {
   userName: string;
@@ -39,16 +38,16 @@ export default function PinModal({ userName, onSubmit, onClose, error }: PinModa
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <h2 className={styles.title}>{userName}</h2>
-        <p className={styles.subtitle}>PIN 4자리를 입력하세요</p>
-        <div className={styles.pinRow}>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={onClose}>
+      <div className="bg-canvas rounded-lg p-xl text-center min-w-[300px] shadow-[0_8px_32px_rgba(0,0,0,0.12)]" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-title-md mb-xxs">{userName}</h2>
+        <p className="text-caption text-muted mb-lg">PIN 4자리를 입력하세요</p>
+        <div className="flex gap-sm justify-center mb-md">
           {digits.map((d, i) => (
             <input
               key={i}
               ref={(el) => { inputRefs.current[i] = el; }}
-              className={styles.pinInput}
+              className="w-12 h-14 border-2 border-hairline rounded-md text-center text-2xl outline-none focus:border-primary"
               type="password"
               inputMode="numeric"
               maxLength={1}
@@ -58,7 +57,7 @@ export default function PinModal({ userName, onSubmit, onClose, error }: PinModa
             />
           ))}
         </div>
-        {error && <p className={styles.error}>{error}</p>}
+        {error && <p className="text-error text-caption">{error}</p>}
       </div>
     </div>
   );

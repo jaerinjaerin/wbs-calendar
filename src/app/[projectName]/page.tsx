@@ -10,7 +10,6 @@ import ExportButtons from '@/components/ExportButtons';
 import TaskModal from '@/components/TaskModal';
 import TaskPeekPanel from '@/components/TaskPeekPanel';
 import type { Task, WbsNode, User } from '@/types';
-import styles from './page.module.css';
 
 export default function ProjectCalendarPage() {
   const params = useParams<{ projectName: string }>();
@@ -89,9 +88,9 @@ export default function ProjectCalendarPage() {
 
   if (notFound) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 16 }}>
-        <p style={{ fontSize: 16, color: '#5c6270' }}>프로젝트를 찾을 수 없습니다</p>
-        <button onClick={() => router.push('/')} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid #d8dce6', background: '#fff', cursor: 'pointer' }}>
+      <div className="flex flex-col items-center justify-center h-screen gap-md">
+        <p className="text-body-md text-muted">프로젝트를 찾을 수 없습니다</p>
+        <button className="py-xs px-5 rounded-md border border-hairline bg-canvas cursor-pointer" onClick={() => router.push('/')}>
           ← 프로젝트 목록
         </button>
       </div>
@@ -103,35 +102,30 @@ export default function ProjectCalendarPage() {
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
 
   return (
-    <div className={styles.app}>
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <button className={styles.backBtn} onClick={() => router.push('/')}>←</button>
-          <span className={styles.logo}>WBS·Cal</span>
-          <span className={styles.projectName}>{projectName}</span>
+    <div className="flex flex-col h-screen overflow-hidden">
+      <header className="flex items-center justify-between px-3 h-12 md:px-5 md:h-14 bg-surface-dark shrink-0">
+        <div className="flex items-center gap-xs md:gap-sm">
+          <button className="bg-transparent border-none text-accent text-base cursor-pointer px-xs py-xxs rounded-xs hover:bg-white/[0.08]" onClick={() => router.push('/')}>←</button>
+          <span className="font-display text-[13px] md:text-[15px] font-medium text-accent">WBS·Cal</span>
+          <span className="text-on-dark text-caption font-medium max-w-[100px] md:max-w-none truncate max-[480px]:hidden">{projectName}</span>
         </div>
-        <div className={styles.headerRight}>
-          <ExportButtons
-            tasks={filteredTasks()}
-            wbsNodes={wbsNodes}
-            users={users}
-            calendarRef={calendarRef}
-          />
-          <button className={styles.addBtn} onClick={() => { setModalDefaultDate(null); setModalOpen(true); }}>
+        <div className="flex items-center gap-1.5 md:gap-xs">
+          <ExportButtons tasks={filteredTasks()} wbsNodes={wbsNodes} users={users} calendarRef={calendarRef} />
+          <button className="px-2.5 md:px-3.5 py-1.5 rounded-sm text-[11px] md:text-xs font-medium border-none bg-accent text-white cursor-pointer" onClick={() => { setModalDefaultDate(null); setModalOpen(true); }}>
             + 작업 추가
           </button>
-          <button className={styles.settingsBtn} onClick={() => router.push(`/settings?project=${projectId}`)}>
+          <button className="px-2.5 md:px-3.5 py-1.5 rounded-sm text-[11px] md:text-xs font-medium border border-white/10 bg-white/[0.08] text-on-dark cursor-pointer" onClick={() => router.push(`/settings?project=${projectId}`)}>
             설정
           </button>
-          <button className={styles.menuBtn} onClick={() => setSidebarOpen((v) => !v)} aria-label="WBS 메뉴">
+          <button className="flex md:hidden w-9 h-9 rounded-sm border border-white/10 bg-white/[0.08] text-on-dark text-lg cursor-pointer items-center justify-center" onClick={() => setSidebarOpen((v) => !v)} aria-label="WBS 메뉴">
             ☰
           </button>
         </div>
       </header>
 
-      {sidebarOpen && <div className={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
-      <div className={styles.body}>
-        <div className={`${styles.sidebarWrap} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
+      {sidebarOpen && <div className="block md:hidden fixed inset-0 top-12 bg-black/30 z-[39]" onClick={() => setSidebarOpen(false)} />}
+      <div className="flex flex-1 overflow-hidden">
+        <div className={`block fixed top-12 left-0 bottom-0 w-[280px] z-40 transition-transform duration-[250ms] md:contents ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <WbsTree
             projectId={projectId}
             selectedNodeId={selectedNodeId}

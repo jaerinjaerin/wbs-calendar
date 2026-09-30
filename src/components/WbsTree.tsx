@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { buildTree } from '@/lib/wbs';
 import type { WbsTreeNode } from '@/types';
-import styles from './WbsTree.module.css';
 
 interface WbsTreeProps {
   projectId: string;
@@ -86,20 +85,20 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDat
     return (
       <div key={node.id}>
         <div
-          className={`${styles.item} ${isSelected ? styles.active : ''}`}
+          className={`group flex items-center gap-xxs py-1.5 pr-md text-[13px] cursor-pointer relative hover:bg-surface-card ${isSelected ? 'bg-surface-soft text-accent' : ''}`}
           style={{ paddingLeft: 16 + indent }}
           onClick={() => onSelectNode(isSelected ? null : node.id)}
         >
           <span
-            className={`${styles.toggle} ${!hasChildren ? styles.empty : ''} ${isCollapsed ? styles.collapsed : ''}`}
+            className={`w-4 h-4 flex items-center justify-center text-[10px] text-muted-soft shrink-0 transition-transform duration-150 ${!hasChildren ? 'invisible' : ''} ${isCollapsed ? '-rotate-90' : ''}`}
             onClick={(e) => { e.stopPropagation(); toggleCollapse(node.id); }}
           >
             ▾
           </span>
-          <span className={styles.dot} style={{ background: node.color }} />
+          <span className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: node.color }} />
           {editingId === node.id ? (
             <input
-              className={styles.editInput}
+              className="flex-1 text-[13px] border border-accent rounded-[3px] py-[1px] px-xxs outline-none"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               onBlur={() => handleRename(node.id)}
@@ -109,22 +108,22 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDat
             />
           ) : (
             <span
-              className={styles.label}
+              className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
               onDoubleClick={(e) => { e.stopPropagation(); setEditingId(node.id); setEditName(node.name); }}
             >
               {node.name}
             </span>
           )}
-          <span className={styles.count}>{node.task_count}</span>
+          <span className="font-mono text-[11px] text-muted-soft bg-surface-card px-1.5 rounded-pill">{node.task_count}</span>
           <button
-            className={styles.addBtn}
+            className="opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer text-sm text-muted-soft px-0.5"
             title="하위 항목 추가"
             onClick={(e) => { e.stopPropagation(); handleAddNode(node.id, node.depth + 1); }}
           >
             +
           </button>
           <button
-            className={styles.delBtn}
+            className="opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer text-sm text-error px-0.5"
             title="삭제"
             onClick={(e) => { e.stopPropagation(); handleDelete(node.id); }}
           >
@@ -137,12 +136,12 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDat
   }
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.header}>
-        <span className={styles.title}>WBS 구조</span>
-        <button className={styles.headerAdd} onClick={() => handleAddNode(null, 0)}>+</button>
+    <aside className="w-[280px] bg-canvas border-r border-hairline flex flex-col overflow-hidden shrink-0">
+      <div className="p-md flex items-center justify-between border-b border-hairline-soft">
+        <span className="text-xs font-semibold uppercase tracking-[0.8px] text-muted-soft">WBS 구조</span>
+        <button className="w-[22px] h-[22px] rounded-xs border border-hairline bg-transparent cursor-pointer text-sm flex items-center justify-center" onClick={() => handleAddNode(null, 0)}>+</button>
       </div>
-      <div className={styles.tree}>
+      <div className="flex-1 overflow-y-auto py-xs">
         {tree.map(renderNode)}
       </div>
     </aside>

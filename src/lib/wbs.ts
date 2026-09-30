@@ -37,3 +37,24 @@ export function buildTree(
 
   return roots;
 }
+
+export function flattenHierarchical(nodes: WbsNode[]): WbsNode[] {
+  const byParent = new Map<string | null, WbsNode[]>();
+  for (const n of nodes) {
+    const key = n.parent_id ?? null;
+    if (!byParent.has(key)) byParent.set(key, []);
+    byParent.get(key)!.push(n);
+  }
+  byParent.forEach((list) => {
+    list.sort((a: WbsNode, b: WbsNode) => a.sort_order - b.sort_order);
+  });
+  const result: WbsNode[] = [];
+  function walk(parentId: string | null) {
+    for (const n of byParent.get(parentId) ?? []) {
+      result.push(n);
+      walk(n.id);
+    }
+  }
+  walk(null);
+  return result;
+}

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { verifyPin } from '@/lib/auth';
 import type { User, Project } from '@/types';
-import styles from './page.module.css';
+
+const inputCls = 'py-2 px-2.5 border border-hairline rounded-sm text-[13px] font-sans outline-none w-full flex-1 focus:border-primary';
 
 function SettingsInner() {
   const router = useRouter();
@@ -105,23 +106,16 @@ function SettingsInner() {
   if (!verified) {
     const backPath = `/${encodeURIComponent(project.name)}`;
     return (
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>설정</h1>
-          <button className={styles.backBtn} onClick={() => router.push(backPath)}>← 캘린더로</button>
+      <div className="max-w-[600px] mx-auto py-10 px-lg">
+        <div className="flex items-center justify-between mb-xl">
+          <h1 className="text-title-lg">설정</h1>
+          <button className="py-1.5 px-3.5 rounded-sm border border-hairline bg-canvas text-caption cursor-pointer" onClick={() => router.push(backPath)}>← 캘린더로</button>
         </div>
-        <form className={styles.authForm} onSubmit={handleAuth}>
-          <p className={styles.authLabel}>관리자 비밀번호를 입력하세요</p>
-          <input
-            className={styles.input}
-            type="password"
-            placeholder="비밀번호"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoFocus
-          />
-          {authError && <p className={styles.authError}>{authError}</p>}
-          <button className={styles.authBtn} type="submit">확인</button>
+        <form className="bg-canvas border border-hairline rounded-lg p-5 flex flex-col gap-sm" onSubmit={handleAuth}>
+          <p className="text-body-sm font-medium text-muted">관리자 비밀번호를 입력하세요</p>
+          <input className={inputCls} type="password" placeholder="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus />
+          {authError && <p className="text-xs text-error">{authError}</p>}
+          <button className="py-2.5 border-none rounded-sm bg-primary text-on-primary text-body-sm font-medium cursor-pointer" type="submit">확인</button>
         </form>
       </div>
     );
@@ -133,55 +127,45 @@ function SettingsInner() {
   const backPath = `/${encodeURIComponent(project.name)}`;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>설정</h1>
-        <button className={styles.backBtn} onClick={() => router.push(backPath)}>← 캘린더로</button>
+    <div className="max-w-[600px] mx-auto py-10 px-lg">
+      <div className="flex items-center justify-between mb-xl">
+        <h1 className="text-title-lg">설정</h1>
+        <button className="py-1.5 px-3.5 rounded-sm border border-hairline bg-canvas text-caption cursor-pointer" onClick={() => router.push(backPath)}>← 캘린더로</button>
       </div>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>프로젝트</h2>
-        <input
-          className={styles.input}
-          value={projectName}
-          onChange={(e) => setProjectName(e.target.value)}
-        />
+      <section className="bg-canvas border border-hairline rounded-lg p-5 mb-5">
+        <h2 className="text-body-sm font-semibold mb-3.5">프로젝트</h2>
+        <input className={inputCls} value={projectName} onChange={(e) => setProjectName(e.target.value)} />
       </section>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>팀원 관리</h2>
-        <div className={styles.userList}>
+      <section className="bg-canvas border border-hairline rounded-lg p-5 mb-5">
+        <h2 className="text-body-sm font-semibold mb-3.5">팀원 관리</h2>
+        <div className="flex flex-col gap-xs mb-3.5">
           {users.map((u) => (
-            <div key={u.id} className={styles.userRow}>
-              <span className={styles.userName}>{u.name}</span>
-              <span className={styles.userRole}>{u.role === 'pm' ? 'PM' : '팀원'}</span>
+            <div key={u.id} className="flex items-center gap-xs py-xs px-sm bg-surface-soft rounded-sm">
+              <span className="flex-1 text-[13px]">{u.name}</span>
+              <span className="text-[11px] py-0.5 px-xs rounded-pill bg-surface-card text-accent">{u.role === 'pm' ? 'PM' : '팀원'}</span>
               {u.role !== 'pm' && (
-                <button className={styles.deleteBtn} onClick={() => handleDeleteUser(u.id)}>삭제</button>
+                <button className="py-xxs px-2.5 border border-error rounded-xs bg-transparent text-error text-[11px] cursor-pointer" onClick={() => handleDeleteUser(u.id)}>삭제</button>
               )}
             </div>
           ))}
         </div>
-        <form className={styles.addForm} onSubmit={handleAddUser}>
-          <input
-            className={styles.input}
-            placeholder="이름"
-            value={newUserName}
-            onChange={(e) => setNewUserName(e.target.value)}
-            required
-          />
-          <button className={styles.addBtn} type="submit">추가</button>
+        <form className="flex gap-xs" onSubmit={handleAddUser}>
+          <input className={inputCls} placeholder="이름" value={newUserName} onChange={(e) => setNewUserName(e.target.value)} required />
+          <button className="py-xs px-4.5 border-none rounded-sm bg-primary text-on-primary text-[13px] font-medium cursor-pointer whitespace-nowrap" type="submit">추가</button>
         </form>
       </section>
 
       <button
-        className={`${styles.saveBtn} ${!isDirty ? styles.saveBtnDisabled : ''}`}
+        className={`block w-full py-3 border-none rounded-md bg-primary text-on-primary text-body-sm font-semibold cursor-pointer mt-xs ${!isDirty ? 'bg-primary-disabled text-muted cursor-not-allowed' : ''}`}
         onClick={handleSave}
         disabled={!isDirty}
       >
         저장
       </button>
 
-      <button className={styles.dangerBtn} onClick={handleDeleteProject}>
+      <button className="block w-full py-3 border border-error rounded-md bg-transparent text-error text-body-sm font-medium cursor-pointer mt-sm hover:bg-red-50" onClick={handleDeleteProject}>
         프로젝트 삭제
       </button>
     </div>

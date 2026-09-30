@@ -4,7 +4,6 @@ import { useRef, useEffect, forwardRef, useImperativeHandle, useState } from 're
 import type { ComponentType } from 'react';
 import '@toast-ui/calendar/dist/toastui-calendar.min.css';
 import type { Task, WbsNode, User } from '@/types';
-import styles from './CalendarView.module.css';
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -94,30 +93,30 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
     const events = toCalendarEvents(tasks, users);
 
     return (
-      <div className={styles.wrapper}>
-        <div className={styles.toolbar}>
-          <div className={styles.nav}>
-            <button className={styles.navBtn} onClick={() => navigate('prev')}>‹</button>
-            <span className={styles.month}>{dateLabel}</span>
-            <button className={styles.navBtn} onClick={() => navigate('next')}>›</button>
-            <button className={styles.todayBtn} onClick={() => navigate('today')}>오늘</button>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between p-2 px-3 md:p-sm md:px-5 bg-canvas border-b border-hairline flex-wrap gap-xs">
+          <div className="flex items-center gap-xs">
+            <button className="w-[30px] h-[30px] rounded-sm border border-hairline bg-canvas cursor-pointer text-sm flex items-center justify-center hover:bg-surface-card" onClick={() => navigate('prev')}>‹</button>
+            <span className="text-base md:text-title-md min-w-0 md:min-w-[140px]">{dateLabel}</span>
+            <button className="w-[30px] h-[30px] rounded-sm border border-hairline bg-canvas cursor-pointer text-sm flex items-center justify-center hover:bg-surface-card" onClick={() => navigate('next')}>›</button>
+            <button className="text-[11px] md:text-xs px-2 md:px-3 py-1 rounded-xs border border-hairline bg-canvas cursor-pointer font-medium" onClick={() => navigate('today')}>오늘</button>
           </div>
-          <div className={styles.views}>
+          <div className="flex border border-hairline rounded-sm overflow-hidden divide-x divide-hairline">
             <button
-              className={`${styles.viewBtn} ${view === 'month' ? styles.active : ''}`}
+              className={`px-2.5 md:px-4 py-1.5 text-[11px] md:text-xs font-medium border-none cursor-pointer ${view === 'month' ? 'bg-primary text-on-primary' : 'bg-canvas'}`}
               onClick={() => setView('month')}
             >
               월간
             </button>
             <button
-              className={`${styles.viewBtn} ${view === 'week' ? styles.active : ''}`}
+              className={`px-2.5 md:px-4 py-1.5 text-[11px] md:text-xs font-medium border-none cursor-pointer ${view === 'week' ? 'bg-primary text-on-primary' : 'bg-canvas'}`}
               onClick={() => setView('week')}
             >
               주간
             </button>
           </div>
         </div>
-        <div ref={containerRef} className={styles.calendarContainer}>
+        <div ref={containerRef} className="flex-1 overflow-auto p-2 md:p-4 md:px-5">
           {CalendarComp && (
             <CalendarComp
               ref={calRef}

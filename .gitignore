@@ -38,3 +38,4 @@ next-env.d.ts
 # claude code
 .claude/
 .mcp.json
+.playwright-mcp/

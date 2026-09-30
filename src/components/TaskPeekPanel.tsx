@@ -1,7 +1,6 @@
 'use client';
 
 import type { Task, WbsNode, User, TaskStatus } from '@/types';
-import styles from './TaskPeekPanel.module.css';
 
 interface TaskPeekPanelProps {
   task: Task;
@@ -11,6 +10,12 @@ interface TaskPeekPanelProps {
   onDelete: () => void;
   onClose: () => void;
 }
+
+const statusCls: Record<string, string> = {
+  todo: 'bg-gray-100 text-muted-soft',
+  in_progress: 'bg-amber-50 text-amber-500',
+  done: 'bg-emerald-50 text-emerald-600',
+};
 
 export default function TaskPeekPanel({ task, wbsNodes, users, onUpdate, onDelete, onClose }: TaskPeekPanelProps) {
   const node = wbsNodes.find((n) => n.id === task.wbs_node_id);
@@ -27,15 +32,15 @@ export default function TaskPeekPanel({ task, wbsNodes, users, onUpdate, onDelet
   }
 
   return (
-    <div className={styles.panel}>
-      <button className={styles.close} onClick={onClose}>✕</button>
-      <div className={styles.breadcrumb}>{getBreadcrumb()}</div>
-      <h2 className={styles.title}>{task.name}</h2>
-      <div className={styles.meta}>
-        <div className={styles.row}>
-          <span className={styles.label}>상태</span>
+    <div className="fixed right-0 top-12 md:top-14 bottom-0 w-full md:w-[340px] bg-canvas border-l border-hairline shadow-[-4px_0_24px_rgba(0,0,0,0.06)] p-lg z-50 flex flex-col gap-sm">
+      <button className="absolute top-md right-md w-6 h-6 rounded-xs border-none bg-transparent text-muted-soft cursor-pointer text-base" onClick={onClose}>✕</button>
+      <div className="text-[11px] text-muted-soft">{getBreadcrumb()}</div>
+      <h2 className="text-title-sm pr-lg">{task.name}</h2>
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center gap-xs text-[13px]">
+          <span className="w-[60px] text-muted-soft text-xs shrink-0">상태</span>
           <select
-            className={`${styles.status} ${styles[task.status]}`}
+            className={`px-2.5 py-[3px] rounded-xl text-xs font-medium border-none cursor-pointer ${statusCls[task.status] ?? ''}`}
             value={task.status}
             onChange={(e) => onUpdate({ status: e.target.value as TaskStatus })}
           >
@@ -44,23 +49,23 @@ export default function TaskPeekPanel({ task, wbsNodes, users, onUpdate, onDelet
             <option value="done">완료</option>
           </select>
         </div>
-        <div className={styles.row}>
-          <span className={styles.label}>기간</span>
-          <span className={styles.value}>{task.start_date} → {task.end_date}</span>
+        <div className="flex items-center gap-xs text-[13px]">
+          <span className="w-[60px] text-muted-soft text-xs shrink-0">기간</span>
+          <span className="text-ink">{task.start_date} → {task.end_date}</span>
         </div>
-        <div className={styles.row}>
-          <span className={styles.label}>담당자</span>
-          <span className={styles.value}>{assignee?.name ?? '미지정'}</span>
+        <div className="flex items-center gap-xs text-[13px]">
+          <span className="w-[60px] text-muted-soft text-xs shrink-0">담당자</span>
+          <span className="text-ink">{assignee?.name ?? '미지정'}</span>
         </div>
-        <div className={styles.row}>
-          <span className={styles.label}>Phase</span>
-          <span className={styles.value} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 2, background: node?.color ?? '#ccc' }} />
+        <div className="flex items-center gap-xs text-[13px]">
+          <span className="w-[60px] text-muted-soft text-xs shrink-0">Phase</span>
+          <span className="text-ink flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-[2px]" style={{ background: node?.color ?? '#ccc' }} />
             {node?.name ?? ''}
           </span>
         </div>
       </div>
-      <button className={styles.deleteBtn} onClick={onDelete}>작업 삭제</button>
+      <button className="mt-auto py-xs border border-error rounded-sm bg-transparent text-error text-xs cursor-pointer hover:bg-red-50" onClick={onDelete}>작업 삭제</button>
     </div>
   );
 }
