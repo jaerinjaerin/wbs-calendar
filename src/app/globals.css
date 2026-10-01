@@ -68,7 +68,7 @@ body {
 
 /* Event bars */
 .toastui-calendar-weekday-event {
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
 }

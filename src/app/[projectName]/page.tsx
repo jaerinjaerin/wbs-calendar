@@ -27,6 +27,7 @@ export default function ProjectCalendarPage() {
   const [modalDefaultEnd, setModalDefaultEnd] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [popoverRect, setPopoverRect] = useState<DOMRect | null>(null);
 
   const loadData = useCallback(async (pid: string) => {
     const [{ data: t }, { data: n }, { data: u }] = await Promise.all([
@@ -136,7 +137,7 @@ export default function ProjectCalendarPage() {
           tasks={filteredTasks()}
           wbsNodes={wbsNodes}
           users={users}
-          onClickEvent={(id) => setSelectedTaskId(id)}
+          onClickEvent={(id, rect) => { setSelectedTaskId(id); setPopoverRect(rect); }}
           onUpdateTask={handleUpdateTask}
           onSelectDateRange={(start, end) => {
             if (selectedTaskId) { setSelectedTaskId(null); return; }
@@ -164,6 +165,7 @@ export default function ProjectCalendarPage() {
           task={selectedTask}
           wbsNodes={wbsNodes}
           users={users}
+          anchorRect={popoverRect}
           onUpdate={(changes) => handleUpdateTask(selectedTask.id, changes)}
           onDelete={() => handleDeleteTask(selectedTask.id)}
           onClose={() => setSelectedTaskId(null)}

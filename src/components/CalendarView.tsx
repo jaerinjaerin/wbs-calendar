@@ -12,7 +12,7 @@ interface CalendarViewProps {
   tasks: Task[];
   wbsNodes: WbsNode[];
   users: User[];
-  onClickEvent: (taskId: string) => void;
+  onClickEvent: (taskId: string, rect: DOMRect) => void;
   onUpdateTask: (taskId: string, changes: Partial<Task>) => void;
   onSelectDateRange: (start: string, end: string) => void;
   onAddTask: () => void;
@@ -25,12 +25,16 @@ export interface CalendarViewHandle {
 
 // ponytail: calendars prop lets the library own color mapping per calendarId
 function toCalendarInfos(wbsNodes: WbsNode[]) {
-  return wbsNodes.map((n) => ({
-    id: n.id,
-    name: n.name,
-    backgroundColor: n.color ?? '#3563e9',
-    borderColor: n.color ?? '#3563e9',
-  }));
+  return wbsNodes.map((n) => {
+    const c = n.color ?? '#3563e9';
+    return {
+      id: n.id,
+      name: n.name,
+      backgroundColor: c + '20',
+      borderColor: c,
+      color: '#333',
+    };
+  });
 }
 
 function toCalendarEvents(tasks: Task[], users: User[]) {
@@ -146,7 +150,12 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
               useDetailPopup={false}
               useFormPopup={false}
               gridSelection={true}
-              onClickEvent={(e: any) => onClickEvent(e.event.id)}
+              onClickEvent={(e: any) => {
+                const block = containerRef.current?.querySelector(`[data-event-id="${e.event.id}"]`);
+                const bar = block?.querySelector('.toastui-calendar-weekday-event') ?? block;
+                const rect = bar?.getBoundingClientRect() ?? new DOMRect(0, 0, 0, 0);
+                onClickEvent(e.event.id, rect);
+              }}
               onSelectDateTime={(e: any) => {
                 const toLocal = (v: any) => {
                   const d = v.toDate ? v.toDate() : new Date(v);
