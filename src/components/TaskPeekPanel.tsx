@@ -42,19 +42,17 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
   const [memo, setMemo] = useState(task.memo ?? '');
   const [url, setUrl] = useState(task.url ?? '');
   const [editingDates, setEditingDates] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [top, setTop] = useState(anchorRect?.top ?? 8);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (confirmingDelete) { setConfirmingDelete(false); return; }
       (document.activeElement as HTMLElement | null)?.blur(); // flush pending text edit before closing
       onClose();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onClose, confirmingDelete]);
+  }, [onClose]);
 
   // clamp to viewport using the real panel height (it grows when dates expand)
   useLayoutEffect(() => {
@@ -191,26 +189,8 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
       </div>
 
       <div className="px-xxs">
-        <button className="text-error text-xs cursor-pointer bg-transparent border-none py-xxs px-0 hover:underline" onClick={() => setConfirmingDelete(true)}>작업 삭제</button>
+        <button className="text-error text-xs cursor-pointer bg-transparent border-none py-xxs px-0 hover:underline" onClick={onDelete}>작업 삭제</button>
       </div>
-
-      {/* same confirm dialog pattern as WbsTree */}
-      {confirmingDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={() => setConfirmingDelete(false)}>
-          <div className="bg-canvas rounded-lg p-lg flex flex-col gap-sm w-[300px] shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <span className="text-[15px] font-semibold text-ink">작업 삭제</span>
-            <p className="text-[13px] text-muted m-0">&lsquo;{task.name}&rsquo; 작업을 삭제합니다. 계속하시겠습니까?</p>
-            <div className="flex gap-xs justify-end mt-xs">
-              <button className="text-[13px] px-md py-[7px] rounded-md border border-hairline bg-transparent cursor-pointer text-muted" onClick={() => setConfirmingDelete(false)}>
-                취소
-              </button>
-              <button className="text-[13px] px-md py-[7px] rounded-md bg-error text-on-primary cursor-pointer border-none" onClick={onDelete}>
-                삭제
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

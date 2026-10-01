@@ -99,9 +99,16 @@ export default function ProjectCalendarPage() {
     insertTask({ ...input, id: crypto.randomUUID() });
   }
 
-  async function handleDeleteTask(taskId: string) {
-    await supabase.from('tasks').delete().eq('id', taskId);
+  // optimistic like insertTask; delete by id is idempotent so retry is safe
+  async function handleDeleteTask(task: Task) {
     setSelectedTaskId(null);
+    setTasks((prev) => prev.filter((t) => t.id !== task.id));
+    const { error } = await supabase.from('tasks').delete().eq('id', task.id);
+    if (error) {
+      setTasks((prev) => [...prev, task]);
+      showToast({ message: '작업 삭제에 실패했습니다', onRetry: () => { setToast(null); handleDeleteTask(task); } });
+      return;
+    }
     if (projectId) await loadData(projectId);
   }
 
@@ -185,7 +192,7 @@ export default function ProjectCalendarPage() {
           users={users}
           anchorRect={popoverRect}
           onUpdate={(changes) => handleUpdateTask(selectedTask.id, changes)}
-          onDelete={() => handleDeleteTask(selectedTask.id)}
+          onDelete={() => handleDeleteTask(selectedTask)}
           onClose={() => setSelectedTaskId(null)}
         />
         </>
