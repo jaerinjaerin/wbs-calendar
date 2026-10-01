@@ -54,12 +54,21 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  // clamp to viewport using the real panel height (it grows when dates expand)
+  // place once per anchor: center on the task when it fits, else top-align and clamp to viewport
   useLayoutEffect(() => {
     if (!anchorRect || !panelRef.current) return;
     const h = panelRef.current.offsetHeight;
-    setTop(Math.max(8, Math.min(anchorRect.top, window.innerHeight - h - 8)));
-  }, [anchorRect, editingDates]);
+    const min = 8, max = window.innerHeight - h - 8;
+    const centered = anchorRect.top + anchorRect.height / 2 - h / 2;
+    setTop(centered >= min && centered <= max ? centered : Math.max(min, Math.min(anchorRect.top, max)));
+  }, [anchorRect]);
+
+  // expanding dates keeps the top fixed; only shift up if the bottom would overflow
+  useLayoutEffect(() => {
+    if (!panelRef.current) return;
+    const max = window.innerHeight - panelRef.current.offsetHeight - 8;
+    setTop((t) => Math.max(8, Math.min(t, max)));
+  }, [editingDates]);
 
   const node = wbsNodes.find((n) => n.id === task.wbs_node_id);
 
