@@ -112,9 +112,6 @@ export default function ProjectCalendarPage() {
         </div>
         <div className="flex items-center gap-1.5 md:gap-xs">
           <ExportButtons tasks={filteredTasks()} wbsNodes={wbsNodes} users={users} calendarRef={calendarRef} />
-          <button className="px-2.5 md:px-3.5 py-1.5 rounded-md text-[11px] md:text-xs font-medium border-none bg-on-primary text-primary cursor-pointer" onClick={() => { setModalDefaultStart(null); setModalDefaultEnd(null); setModalOpen(true); }}>
-            + 작업 추가
-          </button>
           <button className="px-2.5 md:px-3.5 py-1.5 rounded-md text-[11px] md:text-xs font-medium border border-white/10 bg-white/[0.08] text-on-dark cursor-pointer" onClick={() => router.push(`/settings?project=${projectId}`)}>
             설정
           </button>
@@ -142,6 +139,7 @@ export default function ProjectCalendarPage() {
           onClickEvent={(id) => setSelectedTaskId(id)}
           onUpdateTask={handleUpdateTask}
           onSelectDateRange={(start, end) => { setModalDefaultStart(start); setModalDefaultEnd(end); setModalOpen(true); }}
+          onAddTask={() => { setModalDefaultStart(null); setModalDefaultEnd(null); setModalOpen(true); }}
         />
       </div>
 
