@@ -1,5 +1,6 @@
 export type UserRole = 'pm' | 'member';
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type TaskPriority = 'high' | 'medium' | 'low';
 
 export interface Project {
   id: string;
@@ -35,6 +36,9 @@ export interface Task {
   end_date: string;
   assignee_id: string | null;
   status: TaskStatus;
+  memo?: string | null;
+  url?: string | null;
+  priority?: TaskPriority | null;
 }
 
 export interface WbsTreeNode extends WbsNode {

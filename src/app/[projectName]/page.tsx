@@ -162,6 +162,7 @@ export default function ProjectCalendarPage() {
         <>
         <div className="fixed inset-0 z-40" onClick={() => setSelectedTaskId(null)} />
         <TaskPeekPanel
+          key={selectedTask.id}
           task={selectedTask}
           wbsNodes={wbsNodes}
           users={users}

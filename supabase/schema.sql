@@ -35,7 +35,10 @@ create table tasks (
   start_date date not null,
   end_date date not null,
   assignee_id uuid references users(id) on delete set null,
-  status text not null default 'todo' check (status in ('todo', 'in_progress', 'done'))
+  status text not null default 'todo' check (status in ('todo', 'in_progress', 'done')),
+  memo text,
+  url text,
+  priority text check (priority in ('high', 'medium', 'low'))
 );
 
 create index idx_wbs_nodes_project on wbs_nodes(project_id);
