@@ -13,13 +13,13 @@ interface TaskPeekPanelProps {
   onClose: () => void;
 }
 
-const statusCls: Record<TaskStatus, string> = {
+export const statusCls: Record<TaskStatus, string> = {
   todo: 'text-muted',
   in_progress: 'text-warning',
   done: 'text-success',
 };
 
-const priorityCls: Record<TaskPriority, string> = {
+export const priorityCls: Record<TaskPriority, string> = {
   high: 'text-error',
   medium: 'text-warning',
   low: 'text-muted',
@@ -30,11 +30,11 @@ const GAP = 8;
 
 const fmt = (d: string) => `${d.replaceAll('-', '.')}.`;
 
-const groupCls = 'bg-surface-card rounded-lg px-sm';
-const rowCls = 'flex items-center gap-xs min-h-9 text-[13px] [&+&]:border-t [&+&]:border-hairline';
-const labelCls = 'text-muted text-xs shrink-0 w-[52px]';
-const fieldCls = 'bg-transparent border-none outline-none rounded-sm focus:bg-canvas focus:shadow-[0_0_0_2px_rgba(17,17,17,0.12)]';
-const selectCls = 'flex-1 min-w-0 bg-transparent border-none outline-none rounded-sm py-xxs px-xxs text-[13px] cursor-pointer hover:bg-surface-strong';
+export const groupCls = 'bg-surface-card rounded-lg px-sm';
+export const rowCls = 'flex items-center gap-xs min-h-9 text-[13px] [&+&]:border-t [&+&]:border-hairline';
+export const labelCls = 'text-muted text-xs shrink-0 w-[52px]';
+export const fieldCls = 'bg-transparent border-none outline-none rounded-sm'; // no focus ring: the caret is enough
+export const selectCls = 'flex-1 min-w-0 bg-transparent border-none outline-none rounded-sm py-xxs px-xxs text-[13px] cursor-pointer hover:bg-surface-strong';
 
 export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpdate, onDelete, onClose }: TaskPeekPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
