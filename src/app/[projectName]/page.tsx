@@ -138,7 +138,10 @@ export default function ProjectCalendarPage() {
           users={users}
           onClickEvent={(id) => setSelectedTaskId(id)}
           onUpdateTask={handleUpdateTask}
-          onSelectDateRange={(start, end) => { setModalDefaultStart(start); setModalDefaultEnd(end); setModalOpen(true); }}
+          onSelectDateRange={(start, end) => {
+            if (selectedTaskId) { setSelectedTaskId(null); return; }
+            setModalDefaultStart(start); setModalDefaultEnd(end); setModalOpen(true);
+          }}
           onAddTask={() => { setModalDefaultStart(null); setModalDefaultEnd(null); setModalOpen(true); }}
         />
       </div>
@@ -155,6 +158,8 @@ export default function ProjectCalendarPage() {
       )}
 
       {selectedTask && (
+        <>
+        <div className="fixed inset-0 z-40" onClick={() => setSelectedTaskId(null)} />
         <TaskPeekPanel
           task={selectedTask}
           wbsNodes={wbsNodes}
@@ -163,6 +168,7 @@ export default function ProjectCalendarPage() {
           onDelete={() => handleDeleteTask(selectedTask.id)}
           onClose={() => setSelectedTaskId(null)}
         />
+        </>
       )}
     </div>
   );

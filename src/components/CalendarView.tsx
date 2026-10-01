@@ -152,12 +152,8 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
                   const d = v.toDate ? v.toDate() : new Date(v);
                   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
                 };
-                const start = toLocal(e.start);
-                const end = toLocal(e.end);
-                // ponytail: TUI single-click end = next day (exclusive), drag end = last cell (inclusive)
-                const diffDays = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
-                const actualEnd = diffDays <= 1 ? start : end;
-                onSelectDateRange(start, actualEnd);
+                // ponytail: TUI month view returns same cell for click, last cell for drag — both inclusive
+                onSelectDateRange(toLocal(e.start), toLocal(e.end));
                 calRef.current?.getInstance?.().clearGridSelections();
               }}
               onBeforeUpdateEvent={(e: any) => {
