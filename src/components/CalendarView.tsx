@@ -58,6 +58,7 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
   function CalendarView({ tasks, wbsNodes, users, onClickEvent, onUpdateTask, onSelectDateRange, onAddTask }, ref) {
     const calRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
     const [dateLabel, setDateLabel] = useState('');
     // ponytail: @toast-ui/calendar reads `window` at module-eval time, which
     // crashes Next's SSR/prerender pass. Loading it lazily in an effect keeps
@@ -136,7 +137,7 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
             </div>
           </div>
         </div>
-        <div ref={containerRef} className="flex-1 overflow-auto p-2 md:p-4 md:px-5">
+        <div ref={containerRef} className="flex-1 overflow-auto p-2 md:p-4 md:px-5" onMouseDown={(e) => { mouseDownPos.current = { x: e.clientX, y: e.clientY }; }}>
           {CalendarComp && (
             <CalendarComp
               ref={calRef}
@@ -161,8 +162,13 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
                   const d = v.toDate ? v.toDate() : new Date(v);
                   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
                 };
-                // ponytail: TUI month view returns same cell for click, last cell for drag — both inclusive
-                onSelectDateRange(toLocal(e.start), toLocal(e.end));
+                const start = toLocal(e.start);
+                const end = toLocal(e.end);
+                // ponytail: distinguish click from drag via mouse travel distance
+                const down = mouseDownPos.current;
+                const up = e.nativeEvent;
+                const moved = down && up ? Math.hypot(up.clientX - down.x, up.clientY - down.y) > 5 : false;
+                if (start !== end || moved) onSelectDateRange(start, end);
                 calRef.current?.getInstance?.().clearGridSelections();
               }}
               onBeforeUpdateEvent={(e: any) => {
