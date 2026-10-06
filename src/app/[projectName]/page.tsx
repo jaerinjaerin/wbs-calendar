@@ -9,9 +9,8 @@ import type { CalendarViewHandle } from '@/components/CalendarView';
 import ExportButtons from '@/components/ExportButtons';
 import TaskModal from '@/components/TaskModal';
 import TaskPeekPanel from '@/components/TaskPeekPanel';
+import { useToast } from '@/components/Toast';
 import type { Task, WbsNode, User } from '@/types';
-
-type Toast = { message: string; onRetry?: () => void };
 
 export default function ProjectCalendarPage() {
   const params = useParams<{ projectName: string }>();
@@ -31,8 +30,7 @@ export default function ProjectCalendarPage() {
   const [notFound, setNotFound] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [popoverRect, setPopoverRect] = useState<DOMRect | null>(null);
-  const [toast, setToast] = useState<Toast | null>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
+  const { showToast, hideToast, toastNode } = useToast();
 
   const loadData = useCallback(async (pid: string) => {
     const [{ data: t }, { data: n }, { data: u }] = await Promise.all([
@@ -83,12 +81,6 @@ export default function ProjectCalendarPage() {
     if (projectId) await loadData(projectId);
   }
 
-  function showToast(next: Toast) {
-    clearTimeout(toastTimer.current);
-    setToast(next);
-    toastTimer.current = setTimeout(() => setToast(null), 6000);
-  }
-
   // optimistic: show immediately, roll back on failure. Client-side id makes retries idempotent (PK conflict).
   async function insertTask(task: Task) {
     setTasks((prev) => [...prev, task]);
@@ -96,7 +88,7 @@ export default function ProjectCalendarPage() {
     // 23505 = unique violation: an earlier attempt already landed, so treat as success
     if (error && error.code !== '23505') {
       setTasks((prev) => prev.filter((t) => t.id !== task.id));
-      showToast({ message: '작업 추가에 실패했습니다', onRetry: () => { setToast(null); insertTask(task); } });
+      showToast({ message: '작업 추가에 실패했습니다', onRetry: () => { hideToast(); insertTask(task); } });
       return;
     }
     if (projectId) await loadData(projectId);
@@ -114,7 +106,7 @@ export default function ProjectCalendarPage() {
     const { error } = await supabase.from('tasks').delete().eq('id', task.id);
     if (error) {
       setTasks((prev) => [...prev, task]);
-      showToast({ message: '작업 삭제에 실패했습니다', onRetry: () => { setToast(null); handleDeleteTask(task); } });
+      showToast({ message: '작업 삭제에 실패했습니다', onRetry: () => { hideToast(); handleDeleteTask(task); } });
       return;
     }
     if (projectId) await loadData(projectId);
@@ -206,15 +198,7 @@ export default function ProjectCalendarPage() {
         </>
       )}
 
-      {toast && (
-        <div role="status" className="fixed bottom-lg right-lg max-md:left-md max-md:right-md max-md:bottom-md z-[110] flex items-center gap-sm bg-surface-dark text-on-dark rounded-lg pl-md pr-xs py-xs text-[13px] font-medium shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-          <span className="flex-1">{toast.message}</span>
-          {toast.onRetry && (
-            <button className="h-7 px-sm rounded-md bg-white/[0.08] border border-white/10 text-on-dark text-[13px] font-semibold cursor-pointer hover:bg-white/[0.14]" onClick={toast.onRetry}>다시 시도</button>
-          )}
-          <button className="w-7 h-7 rounded-md bg-transparent border-none text-on-dark-soft cursor-pointer hover:bg-white/[0.08] hover:text-on-dark" onClick={() => setToast(null)} aria-label="닫기">✕</button>
-        </div>
-      )}
+      {toastNode}
     </div>
   );
 }

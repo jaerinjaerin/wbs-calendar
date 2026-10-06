@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { verifyPin } from '@/lib/auth';
+import { useToast } from '@/components/Toast';
 import type { User, Project } from '@/types';
 
 const inputCls = 'h-10 px-3.5 w-full border border-hairline rounded-md bg-canvas text-body-md text-ink font-sans outline-none placeholder:text-muted-soft focus:border-ink';
@@ -24,14 +25,12 @@ function SettingsInner() {
   const [users, setUsers] = useState<User[]>([]);
   const [projectName, setProjectName] = useState('');
   const [newUserName, setNewUserName] = useState('');
-  const [adding, setAdding] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
+  const { showToast, hideToast, toastNode } = useToast();
 
   const composing = useRef(false);
   const submitAfterCompose = useRef(false);
 
   const initialName = useRef('');
-  const initialUserIds = useRef<string[]>([]);
 
   useEffect(() => {
     if (!projectIdParam) { router.replace('/'); return; }
@@ -51,9 +50,10 @@ function SettingsInner() {
     if (!project?.admin_password_hash) return;
     const valid = await verifyPin(password, project.admin_password_hash);
     if (valid) {
+      // load before showing the list, or a late response would wipe optimistic adds
+      await loadData(project.id);
       setVerified(true);
       setAuthError(null);
-      loadData(project.id);
     } else {
       setAuthError('비밀번호가 올바르지 않습니다');
     }
@@ -64,10 +64,7 @@ function SettingsInner() {
       supabase.from('users').select('*').eq('project_id', projectId),
       supabase.from('projects').select('*').eq('id', projectId).single(),
     ]);
-    if (u) {
-      setUsers(u);
-      initialUserIds.current = u.map((x) => x.id).sort();
-    }
+    if (u) setUsers(u);
     if (p) {
       setProject(p);
       setProjectName(p.name);
@@ -75,43 +72,48 @@ function SettingsInner() {
     }
   }
 
-  async function handleAddUser(e: React.FormEvent<HTMLFormElement>) {
+  // optimistic like insertTask on the calendar page: client-side id makes retries idempotent (PK conflict)
+  async function insertUser(user: User) {
+    setUsers((prev) => [...prev, user]);
+    const { error } = await supabase.from('users').insert(user);
+    // 23505 = unique violation: an earlier attempt already landed, so treat as success
+    if (error && error.code !== '23505') {
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      showToast({ message: '팀원 추가에 실패했습니다', onRetry: () => { hideToast(); insertUser(user); } });
+    }
+  }
+
+  function handleAddUser(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     // read the DOM value: when submitted from compositionend, state may lag the committed text
     const name = e.currentTarget.querySelector('input')!.value.trim();
-    if (!project || !name || adding) return;
-    setAdding(true);
-    setAddError(null);
-    try {
-      const { error } = await supabase.from('users').insert({
-        name,
-        pin_hash: null,
-        role: 'member',
-        project_id: project.id,
-      });
-      if (error) {
-        setAddError('팀원을 추가하지 못했습니다. 네트워크 상태를 확인하고 다시 시도하세요.');
-        return;
-      }
-      setNewUserName('');
-      await loadData(project.id);
-    } finally {
-      setAdding(false);
-    }
+    if (!project || !name) return;
+    setNewUserName('');
+    insertUser({ id: crypto.randomUUID(), name, pin_hash: null, role: 'member', project_id: project.id });
   }
 
-  async function handleDeleteUser(userId: string) {
-    if (!project) return;
-    await supabase.from('users').delete().eq('id', userId);
-    await loadData(project.id);
+  // optimistic; delete by id is idempotent so retry is safe
+  async function handleDeleteUser(user: User) {
+    setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    const { error } = await supabase.from('users').delete().eq('id', user.id);
+    if (error) {
+      setUsers((prev) => [...prev, user]);
+      showToast({ message: '팀원 삭제에 실패했습니다', onRetry: () => { hideToast(); handleDeleteUser(user); } });
+    }
   }
 
   async function handleSave() {
-    if (!project || !projectName.trim()) return;
-    if (projectName.trim() !== initialName.current) {
-      await supabase.from('projects').update({ name: projectName.trim() }).eq('id', project.id);
+    const name = projectName.trim();
+    if (!project || !name || name === initialName.current) return;
+    const { error } = await supabase.from('projects').update({ name }).eq('id', project.id);
+    if (error) {
+      showToast({ message: '프로젝트 이름 저장에 실패했습니다' });
+      return;
     }
-    await loadData(project.id);
+    // no refetch: reloading users here would wipe in-flight optimistic member changes
+    setProject({ ...project, name });
+    setProjectName(name);
+    initialName.current = name;
   }
 
   async function handleDeleteProject() {
@@ -153,8 +155,8 @@ function SettingsInner() {
     );
   }
 
-  const isDirty = projectName.trim() !== initialName.current
-    || users.map((u) => u.id).sort().join() !== initialUserIds.current.join();
+  // members save instantly, so only the name needs the save button
+  const isDirty = projectName.trim() !== initialName.current;
 
   return (
     <div className="max-w-[640px] mx-auto py-xxl px-lg">
@@ -177,7 +179,7 @@ function SettingsInner() {
               <span className={`text-xs font-medium py-0.5 px-2 rounded-pill ${u.role === 'pm' ? 'bg-primary text-on-primary' : 'bg-surface-card text-muted'}`}>{u.role === 'pm' ? 'PM' : '팀원'}</span>
               {u.role !== 'pm' && (
                 // ponytail: always visible on touch screens, hover-reveal from md up
-                <button className="text-caption text-muted hover:text-error bg-transparent border-none cursor-pointer md:opacity-0 md:group-hover:opacity-100 focus:opacity-100" onClick={() => handleDeleteUser(u.id)}>삭제</button>
+                <button className="text-caption text-muted hover:text-error bg-transparent border-none cursor-pointer md:opacity-0 md:group-hover:opacity-100 focus:opacity-100" onClick={() => handleDeleteUser(u)}>삭제</button>
               )}
             </li>
           ))}
@@ -199,9 +201,8 @@ function SettingsInner() {
             required
           />
           {/* Safari drops the click that ends a Korean IME composition, so submit on compositionend instead */}
-          <button className={`${primaryBtn} shrink-0`} type="submit" disabled={adding} onMouseDown={() => { if (composing.current) submitAfterCompose.current = true; }}>{adding ? '추가 중…' : '추가'}</button>
+          <button className={`${primaryBtn} shrink-0`} type="submit" onMouseDown={() => { if (composing.current) submitAfterCompose.current = true; }}>추가</button>
         </form>
-        {addError && <p className="text-caption text-error mt-xs" role="alert">{addError}</p>}
       </section>
 
       <div className="flex justify-end mb-xl">
@@ -217,6 +218,7 @@ function SettingsInner() {
           프로젝트 삭제
         </button>
       </section>
+      {toastNode}
     </div>
   );
 }
