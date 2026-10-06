@@ -14,12 +14,12 @@ interface AddingState {
 
 interface WbsTreeProps {
   projectId: string;
-  selectedNodeId: string | null;
-  onSelectNode: (id: string | null) => void;
+  hiddenIds: Set<string>;
+  onToggleNode: (id: string) => void;
   onDataChange?: () => void;
 }
 
-export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDataChange }: WbsTreeProps) {
+export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChange }: WbsTreeProps) {
   const [tree, setTree] = useState<WbsTreeNode[]>([]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -80,7 +80,9 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDat
     // ponytail: child nodes inherit parent color, root nodes use user-picked color
     const color = parentId ? (findNode(tree, parentId)?.color ?? newColor) : newColor;
 
-    await supabase.from('wbs_nodes').insert({
+    // close first so repeat clicks/Enter can't insert duplicates
+    setAdding(null);
+    const { error } = await supabase.from('wbs_nodes').insert({
       project_id: projectId,
       parent_id: parentId,
       name: newName.trim(),
@@ -88,7 +90,8 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDat
       color,
       depth,
     });
-    setAdding(null);
+    if (error) alert(`추가 실패: ${error.message}`);
+    if (parentId) setCollapsed((prev) => { const next = new Set(prev); next.delete(parentId); return next; });
     await loadTree();
     onDataChange?.();
   }
@@ -106,7 +109,6 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDat
   async function confirmDelete() {
     if (!deletingId) return;
     await supabase.from('wbs_nodes').delete().eq('id', deletingId);
-    if (selectedNodeId === deletingId) onSelectNode(null);
     setDeletingId(null);
     await loadTree();
     onDataChange?.();
@@ -115,15 +117,15 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDat
   function renderNode(node: WbsTreeNode) {
     const isCollapsed = collapsed.has(node.id);
     const hasChildren = node.children.length > 0;
-    const isSelected = selectedNodeId === node.id;
+    const isChecked = !hiddenIds.has(node.id);
     const indent = node.depth * 20;
 
     return (
       <div key={node.id}>
         <div
-          className={`group flex items-center gap-xxs py-1.5 pr-md text-[13px] cursor-pointer relative hover:bg-surface-card ${isSelected ? 'bg-surface-soft text-accent' : ''}`}
+          className="group flex items-center gap-xs py-1.5 pr-md text-[13px] cursor-pointer relative hover:bg-surface-card"
           style={{ paddingLeft: 16 + indent }}
-          onClick={() => onSelectNode(isSelected ? null : node.id)}
+          onClick={() => onToggleNode(node.id)}
         >
           <span
             className={`w-4 h-4 flex items-center justify-center text-[10px] text-muted-soft shrink-0 transition-transform duration-150 ${!hasChildren ? 'invisible' : ''} ${isCollapsed ? '-rotate-90' : ''}`}
@@ -131,7 +133,14 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDat
           >
             ▾
           </span>
-          <span className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: node.color }} />
+          <span
+            role="checkbox"
+            aria-checked={isChecked}
+            className="w-4 h-4 rounded-[4px] shrink-0 border-2 flex items-center justify-center text-white text-[11px] font-bold leading-none"
+            style={{ borderColor: node.color, background: isChecked ? node.color : 'transparent' }}
+          >
+            {isChecked && '✓'}
+          </span>
           {editingId === node.id ? (
             <input
               className="flex-1 text-[13px] border border-accent rounded-[3px] py-[1px] px-xxs outline-none"
@@ -193,7 +202,7 @@ export default function WbsTree({ projectId, selectedNodeId, onSelectNode, onDat
               placeholder="이름 입력"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') confirmAdd(); if (e.key === 'Escape') setAdding(null); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) confirmAdd(); if (e.key === 'Escape') setAdding(null); }}
             />
             {!adding.parentId && (
               <div>

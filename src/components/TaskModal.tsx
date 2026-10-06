@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import type { Task, WbsNode, User, TaskStatus, TaskPriority } from '@/types';
 import { flattenHierarchical } from '@/lib/wbs';
+import WbsSelect from './WbsSelect';
 import { groupCls, rowCls, labelCls, fieldCls, selectCls, statusCls, priorityCls } from './TaskPeekPanel';
 
 interface TaskModalProps {
@@ -91,10 +92,7 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
         {/* attributes */}
         <div className={groupCls}>
           <div className={rowCls}>
-            <span className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: color }} />
-            <select className={`${selectCls} text-ink`} value={wbsNodeId} onChange={(e) => setWbsNodeId(e.target.value)} required>
-              {sortedNodes.map((n) => <option key={n.id} value={n.id}>{'　'.repeat(n.depth)}{n.name}</option>)}
-            </select>
+            <WbsSelect nodes={wbsNodes} value={wbsNodeId} onChange={setWbsNodeId} />
           </div>
           <div className={rowCls}>
             <span className={labelCls}>담당자</span>

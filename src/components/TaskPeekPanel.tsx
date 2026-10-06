@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Task, WbsNode, User, TaskStatus, TaskPriority } from '@/types';
+import WbsSelect from './WbsSelect';
 
 interface TaskPeekPanelProps {
   task: Task;
@@ -138,10 +139,7 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
       {/* attributes */}
       <div className={groupCls}>
         <div className={rowCls}>
-          <span className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: node?.color ?? '#ccc' }} />
-          <select className={`${selectCls} text-ink`} value={task.wbs_node_id} onChange={(e) => onUpdate({ wbs_node_id: e.target.value })}>
-            {wbsNodes.map((n) => <option key={n.id} value={n.id}>{'　'.repeat(n.depth)}{n.name}</option>)}
-          </select>
+          <WbsSelect nodes={wbsNodes} value={task.wbs_node_id} onChange={(id) => onUpdate({ wbs_node_id: id })} />
         </div>
         <div className={rowCls}>
           <span className={labelCls}>담당자</span>

@@ -22,7 +22,8 @@ export default function ProjectCalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [wbsNodes, setWbsNodes] = useState<WbsNode[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  // store unchecked ids so new nodes show by default
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDefaultStart, setModalDefaultStart] = useState<string | null>(null);
@@ -60,14 +61,21 @@ export default function ProjectCalendarPage() {
   }, [params.projectName, loadData]);
 
   function filteredTasks(): Task[] {
-    if (!selectedNodeId) return tasks;
-    const nodeIds = new Set<string>();
-    function collectIds(id: string) {
-      nodeIds.add(id);
-      wbsNodes.filter((n) => n.parent_id === id).forEach((n) => collectIds(n.id));
-    }
-    collectIds(selectedNodeId);
-    return tasks.filter((t) => nodeIds.has(t.wbs_node_id));
+    if (hiddenIds.size === 0) return tasks;
+    return tasks.filter((t) => !hiddenIds.has(t.wbs_node_id));
+  }
+
+  // toggling a node applies the same state to its whole subtree
+  function toggleNode(id: string) {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      const hide = !prev.has(id);
+      (function apply(nodeId: string) {
+        hide ? next.add(nodeId) : next.delete(nodeId);
+        wbsNodes.filter((n) => n.parent_id === nodeId).forEach((n) => apply(n.id));
+      })(id);
+      return next;
+    });
   }
 
   async function handleUpdateTask(taskId: string, changes: Partial<Task>) {
@@ -151,8 +159,8 @@ export default function ProjectCalendarPage() {
         <div className={`block fixed top-12 left-0 bottom-0 w-[280px] z-40 transition-transform duration-[250ms] md:contents ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <WbsTree
             projectId={projectId}
-            selectedNodeId={selectedNodeId}
-            onSelectNode={(id) => { setSelectedNodeId(id); setSidebarOpen(false); }}
+            hiddenIds={hiddenIds}
+            onToggleNode={toggleNode}
             onDataChange={() => loadData(projectId)}
           />
         </div>
