@@ -6,7 +6,10 @@ import { supabase } from '@/lib/supabase';
 import { verifyPin } from '@/lib/auth';
 import type { User, Project } from '@/types';
 
-const inputCls = 'py-2 px-2.5 border border-hairline rounded-md text-[13px] font-sans outline-none w-full flex-1 focus:border-primary';
+const inputCls = 'h-10 px-3.5 w-full border border-hairline rounded-md bg-canvas text-body-md text-ink font-sans outline-none placeholder:text-muted-soft focus:border-ink';
+const primaryBtn = 'h-10 px-5 rounded-md border-none bg-primary text-on-primary text-body-sm font-semibold cursor-pointer whitespace-nowrap hover:bg-primary-active disabled:bg-primary-disabled disabled:text-muted disabled:cursor-not-allowed';
+const secondaryBtn = 'h-10 px-4 inline-flex items-center gap-1.5 rounded-md border border-hairline bg-canvas text-ink text-body-sm font-semibold cursor-pointer whitespace-nowrap hover:bg-surface-card';
+const cardCls = 'bg-canvas border border-hairline rounded-lg p-lg mb-md';
 
 function SettingsInner() {
   const router = useRouter();
@@ -21,6 +24,11 @@ function SettingsInner() {
   const [users, setUsers] = useState<User[]>([]);
   const [projectName, setProjectName] = useState('');
   const [newUserName, setNewUserName] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+
+  const composing = useRef(false);
+  const submitAfterCompose = useRef(false);
 
   const initialName = useRef('');
   const initialUserIds = useRef<string[]>([]);
@@ -67,17 +75,29 @@ function SettingsInner() {
     }
   }
 
-  async function handleAddUser(e: React.FormEvent) {
+  async function handleAddUser(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!project || !newUserName.trim()) return;
-    await supabase.from('users').insert({
-      name: newUserName.trim(),
-      pin_hash: null,
-      role: 'member',
-      project_id: project.id,
-    });
-    setNewUserName('');
-    await loadData(project.id);
+    // read the DOM value: when submitted from compositionend, state may lag the committed text
+    const name = e.currentTarget.querySelector('input')!.value.trim();
+    if (!project || !name || adding) return;
+    setAdding(true);
+    setAddError(null);
+    try {
+      const { error } = await supabase.from('users').insert({
+        name,
+        pin_hash: null,
+        role: 'member',
+        project_id: project.id,
+      });
+      if (error) {
+        setAddError('팀원을 추가하지 못했습니다. 네트워크 상태를 확인하고 다시 시도하세요.');
+        return;
+      }
+      setNewUserName('');
+      await loadData(project.id);
+    } finally {
+      setAdding(false);
+    }
   }
 
   async function handleDeleteUser(userId: string) {
@@ -103,19 +123,31 @@ function SettingsInner() {
 
   if (!project) return null;
 
+  const backPath = `/${encodeURIComponent(project.name)}`;
+
+  const header = (
+    <div className="flex items-start justify-between gap-md mb-xl">
+      <div>
+        <h1 className="font-display text-display-sm text-ink">설정</h1>
+        <p className="text-body-sm text-muted mt-xxs">{project.name}</p>
+      </div>
+      <button className={secondaryBtn} onClick={() => router.push(backPath)}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        캘린더로
+      </button>
+    </div>
+  );
+
   if (!verified) {
-    const backPath = `/${encodeURIComponent(project.name)}`;
     return (
-      <div className="max-w-[600px] mx-auto py-10 px-lg">
-        <div className="flex items-center justify-between mb-xl">
-          <h1 className="text-title-lg">설정</h1>
-          <button className="py-1.5 px-3.5 rounded-md border border-hairline bg-canvas text-caption cursor-pointer" onClick={() => router.push(backPath)}>← 캘린더로</button>
-        </div>
-        <form className="bg-canvas border border-hairline rounded-lg p-5 flex flex-col gap-sm" onSubmit={handleAuth}>
-          <p className="text-body-sm font-medium text-muted">관리자 비밀번호를 입력하세요</p>
+      <div className="max-w-[640px] mx-auto py-xxl px-lg">
+        {header}
+        <form className={cardCls} onSubmit={handleAuth}>
+          <h2 className="text-title-sm text-ink">관리자 인증</h2>
+          <p className="text-body-sm text-muted mt-xxs mb-md">프로젝트를 만들 때 정한 관리자 비밀번호를 입력하세요</p>
           <input className={inputCls} type="password" placeholder="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus />
-          {authError && <p className="text-xs text-error">{authError}</p>}
-          <button className="py-2.5 border-none rounded-md bg-primary text-on-primary text-body-sm font-medium cursor-pointer" type="submit">확인</button>
+          {authError && <p className="text-caption text-error mt-xs">{authError}</p>}
+          <button className={`${primaryBtn} w-full mt-md`} type="submit">확인</button>
         </form>
       </div>
     );
@@ -124,50 +156,67 @@ function SettingsInner() {
   const isDirty = projectName.trim() !== initialName.current
     || users.map((u) => u.id).sort().join() !== initialUserIds.current.join();
 
-  const backPath = `/${encodeURIComponent(project.name)}`;
-
   return (
-    <div className="max-w-[600px] mx-auto py-10 px-lg">
-      <div className="flex items-center justify-between mb-xl">
-        <h1 className="text-title-lg">설정</h1>
-        <button className="py-1.5 px-3.5 rounded-md border border-hairline bg-canvas text-caption cursor-pointer" onClick={() => router.push(backPath)}>← 캘린더로</button>
-      </div>
+    <div className="max-w-[640px] mx-auto py-xxl px-lg">
+      {header}
 
-      <section className="bg-canvas border border-hairline rounded-lg p-5 mb-5">
-        <h2 className="text-body-sm font-semibold mb-3.5">프로젝트</h2>
+      <section className={cardCls}>
+        <h2 className="text-title-sm text-ink">프로젝트</h2>
+        <p className="text-body-sm text-muted mt-xxs mb-md">캘린더 상단에 표시되는 이름</p>
         <input className={inputCls} value={projectName} onChange={(e) => setProjectName(e.target.value)} />
       </section>
 
-      <section className="bg-canvas border border-hairline rounded-lg p-5 mb-5">
-        <h2 className="text-body-sm font-semibold mb-3.5">팀원 관리</h2>
-        <div className="flex flex-col gap-xs mb-3.5">
+      <section className={cardCls}>
+        <h2 className="text-title-sm text-ink">팀원</h2>
+        <p className="text-body-sm text-muted mt-xxs mb-md">작업 담당자로 지정할 수 있는 사람</p>
+        <ul className="divide-y divide-hairline-soft border-y border-hairline-soft mb-md">
           {users.map((u) => (
-            <div key={u.id} className="flex items-center gap-xs py-xs px-sm bg-surface-soft rounded-md">
-              <span className="flex-1 text-[13px]">{u.name}</span>
-              <span className="text-[11px] py-0.5 px-xs rounded-pill bg-surface-card text-muted">{u.role === 'pm' ? 'PM' : '팀원'}</span>
+            <li key={u.id} className="group flex items-center gap-sm py-sm">
+              <span className="w-7 h-7 rounded-full bg-surface-card text-ink text-caption flex items-center justify-center shrink-0">{u.name.charAt(0)}</span>
+              <span className="flex-1 text-body-sm text-ink truncate">{u.name}</span>
+              <span className={`text-xs font-medium py-0.5 px-2 rounded-pill ${u.role === 'pm' ? 'bg-primary text-on-primary' : 'bg-surface-card text-muted'}`}>{u.role === 'pm' ? 'PM' : '팀원'}</span>
               {u.role !== 'pm' && (
-                <button className="py-xxs px-2.5 border border-error rounded-md bg-transparent text-error text-[11px] cursor-pointer" onClick={() => handleDeleteUser(u.id)}>삭제</button>
+                // ponytail: always visible on touch screens, hover-reveal from md up
+                <button className="text-caption text-muted hover:text-error bg-transparent border-none cursor-pointer md:opacity-0 md:group-hover:opacity-100 focus:opacity-100" onClick={() => handleDeleteUser(u.id)}>삭제</button>
               )}
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
         <form className="flex gap-xs" onSubmit={handleAddUser}>
-          <input className={inputCls} placeholder="이름" value={newUserName} onChange={(e) => setNewUserName(e.target.value)} required />
-          <button className="py-xs px-4.5 border-none rounded-md bg-primary text-on-primary text-[13px] font-medium cursor-pointer whitespace-nowrap" type="submit">추가</button>
+          <input
+            className={`${inputCls} flex-1 min-w-0`}
+            placeholder="이름"
+            value={newUserName}
+            onChange={(e) => setNewUserName(e.target.value)}
+            onCompositionStart={() => { composing.current = true; }}
+            onCompositionEnd={(e) => {
+              composing.current = false;
+              if (submitAfterCompose.current) {
+                submitAfterCompose.current = false;
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+            required
+          />
+          {/* Safari drops the click that ends a Korean IME composition, so submit on compositionend instead */}
+          <button className={`${primaryBtn} shrink-0`} type="submit" disabled={adding} onMouseDown={() => { if (composing.current) submitAfterCompose.current = true; }}>{adding ? '추가 중…' : '추가'}</button>
         </form>
+        {addError && <p className="text-caption text-error mt-xs" role="alert">{addError}</p>}
       </section>
 
-      <button
-        className={`block w-full py-3 border-none rounded-md bg-primary text-on-primary text-body-sm font-semibold cursor-pointer mt-xs ${!isDirty ? 'bg-primary-disabled text-muted cursor-not-allowed' : ''}`}
-        onClick={handleSave}
-        disabled={!isDirty}
-      >
-        저장
-      </button>
+      <div className="flex justify-end mb-xl">
+        <button className={primaryBtn} onClick={handleSave} disabled={!isDirty}>저장</button>
+      </div>
 
-      <button className="block w-full py-3 border border-error rounded-md bg-transparent text-error text-body-sm font-medium cursor-pointer mt-sm hover:bg-error/5" onClick={handleDeleteProject}>
-        프로젝트 삭제
-      </button>
+      <section className={`${cardCls} flex flex-col sm:flex-row sm:items-center justify-between gap-md`}>
+        <div>
+          <h2 className="text-title-sm text-ink">프로젝트 삭제</h2>
+          <p className="text-body-sm text-muted mt-xxs">모든 WBS·작업·팀원 데이터가 함께 삭제되며 되돌릴 수 없습니다</p>
+        </div>
+        <button className="h-10 px-4 rounded-md border border-error/40 bg-canvas text-error text-body-sm font-semibold cursor-pointer whitespace-nowrap hover:bg-error/5" onClick={handleDeleteProject}>
+          프로젝트 삭제
+        </button>
+      </section>
     </div>
   );
 }
