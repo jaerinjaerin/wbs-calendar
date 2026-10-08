@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import type { Task, WbsNode } from '@/types';
 
 export const DAY = 86_400_000;
@@ -102,4 +103,149 @@ export function buildLayout(tasks: Task[], wbsNodes: WbsNode[]): Layout {
   });
 
   return { weeks, milestones: section(MILESTONE_WBS_NAME, items.filter((i) => isMilestone(i.root))), groups };
+}
+
+const FONT_BOLD = 'Samsung SS Head KR Bold';
+const FONT_MEDIUM = 'Samsung SS Head KR Medium';
+const ARGB = {
+  header: 'FFB4C6E7',
+  milestone: 'FFFFC000',
+  side: 'FFF2F2F2',
+  fallbackBar: 'FFD9D9D9',
+  date: 'FF0070C0',
+  black: 'FF000000',
+  white: 'FFFFFFFF',
+};
+const FIRST_WEEK_COL = 4;
+const HEADER_ROW = 3;
+const FOOTNOTE = '* 상기 일정은 런칭 일정 및 프로젝트 진행상황에 따라 추후 변동 가능';
+const pad = (n: number) => String(n).padStart(2, '0');
+
+// black text when it out-contrasts white (relative luminance above ~0.179)
+export function barColors(hex: string): { fill: string; text: string } {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return { fill: ARGB.fallbackBar, text: ARGB.black };
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return { fill: 'FF' + hex.slice(1).toUpperCase(), text: luminance > 0.179 ? ARGB.black : ARGB.white };
+}
+
+export function sheetName(projectName: string): string {
+  return projectName.replace(/[\\/?*[\]:]/g, '').trim().slice(0, 31) || 'Schedule';
+}
+
+export function exportFileName(projectName: string, today: Date): string {
+  const yymmdd = `${String(today.getFullYear()).slice(2)}${pad(today.getMonth() + 1)}${pad(today.getDate())}`;
+  return `${yymmdd}_${projectName.replace(/[\\/:*?"<>|]/g, '').trim() || 'Project'}_Schedule.xlsx`;
+}
+
+export function renderWorkbook(layout: Layout, projectName: string, today: Date): ExcelJS.Workbook {
+  const { weeks, milestones, groups } = layout;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(sheetName(projectName), { views: [{ showGridLines: false, zoomScale: 96 }] });
+  const lastCol = FIRST_WEEK_COL + weeks.length - 1;
+
+  const bold = (size = 10): Partial<ExcelJS.Font> => ({ name: FONT_BOLD, size });
+  const medium: Partial<ExcelJS.Font> = { name: FONT_MEDIUM, size: 10 };
+  const center: Partial<ExcelJS.Alignment> = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  function put(r: number, c: number, value: string | null, font: Partial<ExcelJS.Font>, fill?: string, alignment = center) {
+    const cell = ws.getCell(r, c);
+    if (value !== null) cell.value = value;
+    cell.font = font;
+    cell.alignment = alignment;
+    if (fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+  }
+  // mergeCells would make slaves share the master's style object, so later per-cell borders would clobber each other
+  const merge = (top: number, left: number, bottom: number, right: number) => {
+    if (bottom > top || right > left) ws.mergeCellsWithoutStyle(top, left, bottom, right);
+  };
+
+  ws.getColumn(1).width = 3.66;
+  ws.getColumn(2).width = 14;
+  ws.getColumn(3).width = 12.66;
+  for (let c = FIRST_WEEK_COL; c <= lastCol; c++) ws.getColumn(c).width = 13.66;
+
+  // title + updated date
+  ws.getRow(2).height = 33;
+  put(2, 2, projectName, bold(22), undefined, { vertical: 'bottom' });
+  put(2, lastCol, `* ${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())} Updated`,
+    { ...bold(14), color: { argb: ARGB.date } }, undefined, { horizontal: 'right', vertical: 'bottom' });
+
+  // two-row header: 구분 / 상세 / month (merged) / week
+  ws.getRow(4).height = 27.75;
+  for (const r of [3, 4]) {
+    put(r, 2, r === 3 ? '구분' : null, bold(), ARGB.header);
+    put(r, 3, r === 3 ? '상세' : null, bold(), ARGB.header);
+  }
+  merge(3, 2, 4, 2);
+  merge(3, 3, 4, 3);
+  weeks.forEach((w, i) => {
+    put(3, FIRST_WEEK_COL + i, w.month, bold(11), ARGB.header);
+    put(4, FIRST_WEEK_COL + i, w.label, bold(), ARGB.header);
+  });
+  for (let i = 0; i < weeks.length; ) {
+    let j = i;
+    while (j + 1 < weeks.length && weeks[j + 1].monthKey === weeks[i].monthKey) j++;
+    merge(3, FIRST_WEEK_COL + i, 3, FIRST_WEEK_COL + j);
+    i = j + 1;
+  }
+
+  let row = 5;
+  // writes the week area of one section's lanes; returns its first row
+  function writeLanes(sec: Section, isMilestone: boolean): number {
+    const top = row;
+    const font = isMilestone ? bold() : medium;
+    for (let l = 0; l < sec.lanes; l++, row++) {
+      ws.getRow(row).height = isMilestone ? 43 : 30;
+      for (let c = FIRST_WEEK_COL; c <= lastCol; c++) put(row, c, null, font, isMilestone ? ARGB.milestone : undefined);
+    }
+    for (const bar of sec.bars) {
+      const r = top + bar.lane;
+      const c1 = FIRST_WEEK_COL + bar.start;
+      const c2 = FIRST_WEEK_COL + bar.end;
+      const { fill, text } = isMilestone ? { fill: ARGB.milestone, text: ARGB.black } : barColors(bar.color);
+      for (let c = c1; c <= c2; c++) put(r, c, c === c1 ? bar.text : null, { ...font, color: { argb: text } }, fill);
+      merge(r, c1, r, c2);
+    }
+    return top;
+  }
+
+  const msTop = writeLanes(milestones, true);
+  for (let r = msTop; r < row; r++) {
+    put(r, 2, r === msTop ? MILESTONE_WBS_NAME : null, bold(), ARGB.header);
+    put(r, 3, null, bold(), ARGB.header);
+  }
+  merge(msTop, 2, row - 1, 3);
+  const msBottom = row - 1;
+
+  for (const g of groups) {
+    const gTop = row;
+    for (const s of g.sections) {
+      const sTop = writeLanes(s, false);
+      for (let r = sTop; r < row; r++) put(r, 3, r === sTop ? s.name : null, bold(), ARGB.side);
+      merge(sTop, 3, row - 1, 3);
+    }
+    for (let r = gTop; r < row; r++) put(r, 2, r === gTop ? g.name : null, bold(), ARGB.side);
+    merge(gTop, 2, row - 1, 2);
+  }
+  const lastRow = row - 1;
+
+  // borders last, per cell: medium frame, double under the header, thin around 주요 일정 and the side columns, dotted inside
+  for (let r = HEADER_ROW; r <= lastRow; r++) {
+    for (let c = 2; c <= lastCol; c++) {
+      const left = c === 2 ? 'medium' : c === 3 || c === FIRST_WEEK_COL ? 'thin' : 'dotted';
+      const right = c === lastCol ? 'medium' : c <= 3 ? 'thin' : 'dotted';
+      const top = r === HEADER_ROW ? 'medium' : r === 5 ? 'double' : r === 4 || r === msBottom + 1 ? 'thin' : 'dotted';
+      const bottom = r === lastRow ? 'medium' : r === 4 ? 'double' : r === 3 || r === msBottom ? 'thin' : 'dotted';
+      ws.getCell(r, c).border = {
+        left: { style: left }, right: { style: right }, top: { style: top }, bottom: { style: bottom },
+      };
+    }
+  }
+
+  ws.getRow(lastRow + 2).height = 17.75;
+  put(lastRow + 2, 2, FOOTNOTE, bold(11), undefined, { vertical: 'middle' });
+  return wb;
 }

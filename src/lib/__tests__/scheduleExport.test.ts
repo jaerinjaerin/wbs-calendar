@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import { parseDay, mondayOf, isoWeek, weekMonth, buildLayout } from '../scheduleExport';
+import ExcelJS from 'exceljs';
+import {
+  parseDay, mondayOf, isoWeek, weekMonth, buildLayout,
+  barColors, sheetName, exportFileName, renderWorkbook,
+} from '../scheduleExport';
 import type { Task, WbsNode } from '@/types';
 
 describe('week helpers', () => {
@@ -113,5 +117,94 @@ describe('buildLayout', () => {
     expect(l.weeks).toEqual([]);
     expect(l.groups).toEqual([]);
     expect(l.milestones).toEqual({ name: '주요 일정', lanes: 1, bars: [] });
+  });
+});
+
+describe('naming and colors', () => {
+  it('picks the higher-contrast text color and falls back on bad hex', () => {
+    expect(barColors('#3563e9')).toEqual({ fill: 'FF3563E9', text: 'FFFFFFFF' });
+    expect(barColors('#f6c344')).toEqual({ fill: 'FFF6C344', text: 'FF000000' });
+    expect(barColors('#1a9e8f').text).toBe('FF000000');
+    expect(barColors('#abc')).toEqual({ fill: 'FFD9D9D9', text: 'FF000000' });
+    expect(barColors('')).toEqual({ fill: 'FFD9D9D9', text: 'FF000000' });
+  });
+
+  it('sanitizes sheet names', () => {
+    expect(sheetName('Tab S12F')).toBe('Tab S12F');
+    expect(sheetName('a/b\\c?d*e[f]g:h')).toBe('abcdefgh');
+    expect(sheetName('x'.repeat(40))).toHaveLength(31);
+    expect(sheetName('[]:')).toBe('Schedule');
+  });
+
+  it('builds YYMMDD_<name>_Schedule.xlsx', () => {
+    const today = new Date(2026, 9, 7);
+    expect(exportFileName('Tab S12F', today)).toBe('261007_Tab S12F_Schedule.xlsx');
+    expect(exportFileName('a/b:c"d', today)).toBe('261007_abcd_Schedule.xlsx');
+    expect(exportFileName('', today)).toBe('261007_Project_Schedule.xlsx');
+  });
+});
+
+describe('renderWorkbook', () => {
+  async function roundTrip() {
+    const wb = renderWorkbook(buildLayout(tasks, nodes), 'Galaxy/Tab', new Date(2026, 9, 7));
+    const back = new ExcelJS.Workbook();
+    await back.xlsx.load(await wb.xlsx.writeBuffer());
+    return back.worksheets[0];
+  }
+
+  it('writes title, date, headers and footer where the reference has them', async () => {
+    const ws = await roundTrip();
+    expect(ws.name).toBe('GalaxyTab');
+    expect(ws.views[0].showGridLines).toBe(false);
+    expect(ws.getCell('B2').value).toBe('Galaxy/Tab');
+    expect(ws.getCell('H2').value).toBe('* 2026.10.07 Updated'); // last week column (W32)
+    expect(ws.getCell('B3').value).toBe('구분');
+    expect(ws.getCell('C3').value).toBe('상세');
+    expect(['D4', 'E4', 'F4', 'G4', 'H4'].map((a) => ws.getCell(a).value)).toEqual(['W28', 'W29', 'W30', 'W31', 'W32']);
+    expect(ws.getCell('G3').master.address).toBe('D3'); // Jul merged across W28–W31
+    expect(ws.getCell('D3').value).toBe('Jul');
+    expect(ws.getCell('H3').value).toBe('Aug');
+    expect(ws.getCell('B11').value).toBe('* 상기 일정은 런칭 일정 및 프로젝트 진행상황에 따라 추후 변동 가능');
+  });
+
+  it('lays out milestone, groups, details and merged bars', async () => {
+    const ws = await roundTrip();
+    expect(ws.getCell('B5').value).toBe('주요 일정');
+    expect(ws.getCell('C5').master.address).toBe('B5');
+    expect(ws.getCell('D5').value).toBe('1차 검증(7/10)');
+    expect((ws.getCell('D5').fill as ExcelJS.FillPattern).fgColor?.argb).toBe('FFFFC000');
+
+    expect(ws.getCell('B6').value).toBe('Tab S12F 리테일모드');
+    expect(ws.getCell('B8').master.address).toBe('B6');  // 구분 spans 체험앱(1 lane) + 스크린세이버(2 lanes)
+    expect(ws.getCell('C6').value).toBe('체험앱 컨텐츠');
+    expect(ws.getCell('C7').value).toBe('스크린세이버');
+    expect(ws.getCell('C8').master.address).toBe('C7');
+
+    expect(ws.getCell('D7').value).toBe('스토리보드 제안(7/7~7/24)');
+    expect(ws.getCell('F7').master.address).toBe('D7');
+    expect((ws.getCell('F7').fill as ExcelJS.FillPattern).fgColor?.argb).toBe('FF1A9E8F');
+    expect(ws.getCell('D8').value).toBe('월페 입수(7/8)');
+    expect(ws.getCell('E6').value).toBe('1차 작업 진행(7/14~7/31)');
+    expect(ws.getCell('G6').master.address).toBe('E6');
+
+    expect(ws.getCell('B9').value).toBe('카피');
+    expect(ws.getCell('C9').value).toBe('-');
+    expect(ws.getCell('F9').value).toBe('법인리뷰(7/20~7/24)');
+  });
+
+  it('keeps per-cell borders on merged cells (outer edge medium on both ends of a bar)', async () => {
+    const ws = await roundTrip();
+    expect(ws.getCell('H6').border.right?.style).toBe('medium'); // 더미 에셋 bar on the table's right edge
+    expect(ws.getCell('D7').border.left?.style).toBe('thin');    // first week column
+    expect(ws.getCell('F7').border.right?.style).toBe('dotted'); // bar end keeps its own border
+    expect(ws.getCell('D4').border.bottom?.style).toBe('double');
+    expect(ws.getCell('D9').border.bottom?.style).toBe('medium');
+  });
+
+  it('uses only Samsung SS Head KR fonts', async () => {
+    const ws = await roundTrip();
+    const names = new Set<string>();
+    ws.eachRow((row) => row.eachCell((cell) => names.add(cell.font?.name ?? '(none)')));
+    expect(Array.from(names).sort()).toEqual(['Samsung SS Head KR Bold', 'Samsung SS Head KR Medium']);
   });
 });

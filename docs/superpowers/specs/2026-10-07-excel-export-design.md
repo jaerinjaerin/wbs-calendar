@@ -100,7 +100,7 @@ filteredTasks + wbsNodes + projectName + today
 | 주요 일정 라벨 | SS Head KR Bold | 10 | `#B4C6E7` | |
 | 주요 일정 주 셀 | SS Head KR Bold | 10 | `#FFC000` | 레인 높이 43 |
 | 구분/상세 | SS Head KR Bold | 10 | `#F2F2F2` | |
-| Task 바 | SS Head KR Medium | 10 | WBS `color` | 글자색은 배경 상대휘도 > 0.5면 `#000000`, 아니면 `#FFFFFF` |
+| Task 바 | SS Head KR Medium | 10 | WBS `color` | 글자색은 배경 상대휘도 > 0.179면 `#000000`, 아니면 `#FFFFFF` (흑/백 중 대비가 더 큰 쪽) |
 | 빈 주 셀 | SS Head KR Medium | 10 | - | 레인 높이 30 |
 | 각주 | SS Head KR Bold | 11 | - | |
 
