@@ -31,7 +31,7 @@ export const MILESTONE_WBS_NAME = '주요 일정';
 
 export interface Week { monday: number; label: string; month: string; monthKey: string }
 // start/end are week indexes into Layout.weeks, inclusive
-export interface Bar { lane: number; start: number; end: number; text: string; color: string }
+export interface Bar { lane: number; start: number; end: number; name: string; dates: string; color: string }
 export interface Section { name: string; lanes: number; bars: Bar[] }
 export interface Group { name: string; sections: Section[] }
 export interface Layout { weeks: Week[]; milestones: Section; groups: Group[] }
@@ -82,8 +82,8 @@ export function buildLayout(tasks: Task[], wbsNodes: WbsNode[]): Layout {
       let lane = laneEnds.findIndex((occupiedTo) => occupiedTo < start);
       if (lane === -1) lane = laneEnds.length;
       laneEnds[lane] = end;
-      const text = i.s === i.e ? `${i.name}(${md(i.s)})` : `${i.name}(${md(i.s)}~${md(i.e)})`;
-      return { lane, start, end, text, color: i.color };
+      const dates = i.s === i.e ? md(i.s) : `${md(i.s)}~${md(i.e)}`;
+      return { lane, start, end, name: i.name, dates, color: i.color };
     });
     return { name, lanes: Math.max(1, laneEnds.length), bars };
   }
@@ -152,7 +152,7 @@ export function renderWorkbook(layout: Layout, projectName: string, today: Date)
   const bold = (size = 10): Partial<ExcelJS.Font> => ({ name: FONT_BOLD, size });
   const medium: Partial<ExcelJS.Font> = { name: FONT_MEDIUM, size: 10 };
   const center: Partial<ExcelJS.Alignment> = { horizontal: 'center', vertical: 'middle', wrapText: true };
-  function put(r: number, c: number, value: string | null, font: Partial<ExcelJS.Font>, fill?: string, alignment = center) {
+  function put(r: number, c: number, value: ExcelJS.CellValue, font: Partial<ExcelJS.Font>, fill?: string, alignment = center) {
     const cell = ws.getCell(r, c);
     if (value !== null) cell.value = value;
     cell.font = font;
@@ -208,7 +208,10 @@ export function renderWorkbook(layout: Layout, projectName: string, today: Date)
       const c1 = FIRST_WEEK_COL + bar.start;
       const c2 = FIRST_WEEK_COL + bar.end;
       const { fill, text } = isMilestone ? { fill: ARGB.milestone, text: ARGB.black } : barColors(bar.color);
-      for (let c = c1; c <= c2; c++) put(r, c, c === c1 ? bar.text : null, { ...font, color: { argb: text } }, fill);
+      const barFont = { ...font, color: { argb: text } };
+      // name on top, dates on a second, smaller line (rich text keeps both in one cell)
+      const value = { richText: [{ text: bar.name, font: barFont }, { text: `\n(${bar.dates})`, font: { ...barFont, size: 8 } }] };
+      for (let c = c1; c <= c2; c++) put(r, c, c === c1 ? value : null, barFont, fill);
       merge(r, c1, r, c2);
     }
     return top;

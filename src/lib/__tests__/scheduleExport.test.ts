@@ -65,14 +65,14 @@ describe('buildLayout', () => {
   });
 
   it('pulls 주요 일정 tasks into the milestone row and out of the groups', () => {
-    expect(layout.milestones.bars).toEqual([{ lane: 0, start: 0, end: 0, text: '1차 검증(7/10)', color: '#ffc000' }]);
+    expect(layout.milestones.bars).toEqual([{ lane: 0, start: 0, end: 0, name: '1차 검증', dates: '7/10', color: '#ffc000' }]);
     expect(layout.groups.map((g) => g.name)).toEqual(['Tab S12F 리테일모드', '카피']);
   });
 
   it('orders details by sort_order and rolls depth-2 tasks into their depth-1 detail', () => {
     const retail = layout.groups[0];
     expect(retail.sections.map((s) => s.name)).toEqual(['체험앱 컨텐츠', '스크린세이버']);
-    expect(retail.sections[0].bars.map((b) => [b.text, b.lane, b.start, b.end])).toEqual([
+    expect(retail.sections[0].bars.map((b) => [`${b.name}(${b.dates})`, b.lane, b.start, b.end])).toEqual([
       ['1차 작업 진행(7/14~7/31)', 0, 1, 3],
       ['더미 에셋 제작(8/3~8/7)', 0, 4, 4],
     ]);
@@ -81,12 +81,12 @@ describe('buildLayout', () => {
   it('stacks tasks that share a week into separate lanes', () => {
     const ss = layout.groups[0].sections[1];
     expect(ss.lanes).toBe(2);
-    expect(ss.bars.map((b) => [b.text, b.lane])).toEqual([['스토리보드 제안(7/7~7/24)', 0], ['월페 입수(7/8)', 1]]);
+    expect(ss.bars.map((b) => [`${b.name}(${b.dates})`, b.lane])).toEqual([['스토리보드 제안(7/7~7/24)', 0], ['월페 입수(7/8)', 1]]);
   });
 
   it('puts tasks attached directly to a 구분 into a "-" detail', () => {
     expect(layout.groups[1].sections).toEqual([
-      { name: '-', lanes: 1, bars: [{ lane: 0, start: 2, end: 2, text: '법인리뷰(7/20~7/24)', color: '#e5484d' }] },
+      { name: '-', lanes: 1, bars: [{ lane: 0, start: 2, end: 2, name: '법인리뷰', dates: '7/20~7/24', color: '#e5484d' }] },
     ]);
   });
 
@@ -100,7 +100,7 @@ describe('buildLayout', () => {
 
   it('swaps start/end when start_date > end_date', () => {
     const l = buildLayout([task('a', 'ss', 'A', '2026-07-24', '2026-07-07')], nodes);
-    expect(l.groups[0].sections[0].bars[0]).toMatchObject({ start: 0, end: 2, text: 'A(7/7~7/24)' });
+    expect(l.groups[0].sections[0].bars[0]).toMatchObject({ start: 0, end: 2, name: 'A', dates: '7/7~7/24' });
   });
 
   it('matches a padded "주요 일정" name and treats orphan nodes as roots', () => {
@@ -181,7 +181,7 @@ describe('renderWorkbook', () => {
     const ws = await roundTrip();
     expect(ws.getCell('B5').value).toBe('주요 일정');
     expect(ws.getCell('C5').master.address).toBe('B5');
-    expect(ws.getCell('D5').value).toBe('1차 검증(7/10)');
+    expect(ws.getCell('D5').text).toBe('1차 검증\n(7/10)');
     expect((ws.getCell('D5').fill as ExcelJS.FillPattern).fgColor?.argb).toBe('FFFFC000');
 
     expect(ws.getCell('B6').value).toBe('Tab S12F 리테일모드');
@@ -190,16 +190,26 @@ describe('renderWorkbook', () => {
     expect(ws.getCell('C7').value).toBe('스크린세이버');
     expect(ws.getCell('C8').master.address).toBe('C7');
 
-    expect(ws.getCell('D7').value).toBe('스토리보드 제안(7/7~7/24)');
+    expect(ws.getCell('D7').text).toBe('스토리보드 제안\n(7/7~7/24)');
     expect(ws.getCell('F7').master.address).toBe('D7');
     expect((ws.getCell('F7').fill as ExcelJS.FillPattern).fgColor?.argb).toBe('FF1A9E8F');
-    expect(ws.getCell('D8').value).toBe('월페 입수(7/8)');
-    expect(ws.getCell('E6').value).toBe('1차 작업 진행(7/14~7/31)');
+    expect(ws.getCell('D8').text).toBe('월페 입수\n(7/8)');
+    expect(ws.getCell('E6').text).toBe('1차 작업 진행\n(7/14~7/31)');
     expect(ws.getCell('G6').master.address).toBe('E6');
 
     expect(ws.getCell('B9').value).toBe('카피');
     expect(ws.getCell('C9').value).toBe('-');
-    expect(ws.getCell('F9').value).toBe('법인리뷰(7/20~7/24)');
+    expect(ws.getCell('F9').text).toBe('법인리뷰\n(7/20~7/24)');
+  });
+
+  it('writes bar dates on a second line in a smaller font', async () => {
+    const ws = await roundTrip();
+    const runs = (ws.getCell('E6').value as ExcelJS.CellRichTextValue).richText;
+    expect(runs.map((r) => [r.text, r.font?.size, r.font?.name])).toEqual([
+      ['1차 작업 진행', 10, 'Samsung SS Head KR Medium'],
+      ['\n(7/14~7/31)', 8, 'Samsung SS Head KR Medium'],
+    ]);
+    expect(runs[1].font?.color?.argb).toBe(runs[0].font?.color?.argb); // date keeps the bar's text color
   });
 
   it('keeps per-cell borders on merged cells (outer edge medium on both ends of a bar)', async () => {
