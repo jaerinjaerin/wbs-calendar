@@ -136,6 +136,16 @@ describe('naming and colors', () => {
     expect(sheetName('[]:')).toBe('Schedule');
   });
 
+  it('produces sheet names exceljs accepts (no edge apostrophes, not "History")', () => {
+    expect(sheetName("'26 Tab")).toBe('26 Tab');
+    expect(sheetName("Kids'")).toBe('Kids');
+    expect(sheetName('History')).toBe('Schedule');
+    expect(sheetName('x'.repeat(30) + "'yz")).toBe('x'.repeat(30));
+    for (const name of ["'x'", 'History', 'x'.repeat(30) + "'yz"]) {
+      expect(() => new ExcelJS.Workbook().addWorksheet(sheetName(name))).not.toThrow();
+    }
+  });
+
   it('builds YYMMDD_<name>_Schedule.xlsx', () => {
     const today = new Date(2026, 9, 7);
     expect(exportFileName('Tab S12F', today)).toBe('261007_Tab S12F_Schedule.xlsx');

@@ -133,7 +133,9 @@ export function barColors(hex: string): { fill: string; text: string } {
 }
 
 export function sheetName(projectName: string): string {
-  return projectName.replace(/[\\/?*[\]:]/g, '').trim().slice(0, 31) || 'Schedule';
+  // exceljs also rejects names wrapped in apostrophes and the reserved name "History"
+  const name = projectName.replace(/[\\/?*[\]:]/g, '').slice(0, 31).replace(/^[\s']+|[\s']+$/g, '');
+  return name && name !== 'History' ? name : 'Schedule';
 }
 
 export function exportFileName(projectName: string, today: Date): string {
