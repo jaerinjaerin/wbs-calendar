@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import ExcelJS from 'exceljs';
 import {
   parseDay, mondayOf, isoWeek, weekMonth, buildLayout,
-  barColors, sheetName, exportFileName, renderWorkbook,
+  barColors, sheetName, exportFileName, renderWorkbook, textLines,
 } from '../scheduleExport';
 import type { Task, WbsNode } from '@/types';
 
@@ -167,7 +167,8 @@ describe('renderWorkbook', () => {
     expect(ws.name).toBe('GalaxyTab');
     expect(ws.views[0].showGridLines).toBe(false);
     expect(ws.getCell('B2').value).toBe('Galaxy/Tab');
-    expect(ws.getCell('H2').value).toBe('* 2026.10.07 Updated'); // last week column (W32)
+    expect(ws.getCell('G2').value).toBe('* 2026.10.07 Updated'); // last two week columns (W31–W32)
+    expect(ws.getCell('H2').master.address).toBe('G2');
     expect(ws.getCell('B3').value).toBe('구분');
     expect(ws.getCell('C3').value).toBe('상세');
     expect(['D4', 'E4', 'F4', 'G4', 'H4'].map((a) => ws.getCell(a).value)).toEqual(['W28', 'W29', 'W30', 'W31', 'W32']);
@@ -212,6 +213,29 @@ describe('renderWorkbook', () => {
     expect(runs[1].font?.color?.argb).toBe(runs[0].font?.color?.argb); // date keeps the bar's text color
   });
 
+  it('gives the title its own merged span so the date never covers it', async () => {
+    const ws = await roundTrip();
+    expect(ws.getCell('F2').master.address).toBe('B2'); // title B2:F2, date G2:H2
+    expect(ws.getCell('B2').alignment.horizontal).toBe('left');
+  });
+
+  it('wraps the title and grows row 2 when even the merged span is too narrow', async () => {
+    const wb = renderWorkbook(buildLayout([tasks[2]], nodes), 'Galaxy Tab S12 Series Retail Mode', new Date(2026, 9, 7));
+    const ws = wb.worksheets[0];
+    expect(ws.getCell('B2').alignment.wrapText).toBe(true);
+    expect(ws.getRow(2).height).toBeGreaterThan(33);
+  });
+
+  it('keeps short bars at 30pt and grows a lane whose bar text wraps', async () => {
+    const ws = await roundTrip();
+    expect(ws.getRow(6).height).toBe(30); // 1차 작업 진행 over 3 weeks + 더미 에셋 제작 over 1 week: one line each
+    const wb = renderWorkbook(
+      buildLayout([task('long', 'ss', '아주 긴 이름의 스크린세이버 제작 작업 (SES/C&R)', '2026-07-06', '2026-07-06')], nodes),
+      'P', new Date(2026, 9, 7),
+    );
+    expect(wb.worksheets[0].getRow(6).height).toBeGreaterThan(30);
+  });
+
   it('keeps per-cell borders on merged cells (outer edge medium on both ends of a bar)', async () => {
     const ws = await roundTrip();
     expect(ws.getCell('H6').border.right?.style).toBe('medium'); // 더미 에셋 bar on the table's right edge
@@ -226,5 +250,25 @@ describe('renderWorkbook', () => {
     const names = new Set<string>();
     ws.eachRow((row) => row.eachCell((cell) => names.add(cell.font?.name ?? '(none)')));
     expect(Array.from(names).sort()).toEqual(['Samsung SS Head KR Bold', 'Samsung SS Head KR Medium']);
+  });
+});
+
+describe('textLines', () => {
+  it('fits short or widely spanned text on one line', () => {
+    expect(textLines('체험앱 검증', 10, 13.66)).toBe(1);
+    expect(textLines('스크린세이버 제작 (SES/C&R)', 10, 13.66 * 3)).toBe(1);
+  });
+
+  it('wraps on spaces like Excel does', () => {
+    expect(textLines('스크린세이버 제작 (SES/C&R)', 10, 13.66)).toBe(2);
+    expect(textLines('아주 긴 이름의 스크린세이버 제작 작업 (SES/C&R)', 10, 13.66)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('breaks a single word longer than the cell', () => {
+    expect(textLines('가'.repeat(20), 10, 13.66)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('counts wider text at larger font sizes', () => {
+    expect(textLines('Galaxy Tab S12 Series', 22, 14)).toBeGreaterThan(textLines('Galaxy Tab S12 Series', 10, 14));
   });
 });

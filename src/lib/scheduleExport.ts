@@ -143,6 +143,37 @@ export function exportFileName(projectName: string, today: Date): string {
   return `${yymmdd}_${projectName.replace(/[\\/:*?"<>|]/g, '').trim() || 'Project'}_Schedule.xlsx`;
 }
 
+// rough glyph widths in Excel column units at 10pt; Hangul/CJK/emoji run about twice as wide as Latin
+const glyphWidth = (ch: string) =>
+  ch === ' ' ? 0.5 : /[\u1100-\u11ff\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]/.test(ch) || ch.codePointAt(0)! > 0xffff ? 1.6 : 0.9;
+
+// ponytail: estimates Excel's word wrap from glyph widths, because Excel won't auto-fit row heights we set.
+// Tune glyphWidth if real files still clip.
+export function textLines(text: string, size: number, width: number): number {
+  const usable = width - 1.5; // cell padding
+  const scale = size / 10;
+  let lines = 0;
+  for (const para of text.split('\n')) {
+    lines++;
+    let line = 0;
+    for (const word of para.split(' ')) {
+      const w = Array.from(word).reduce((sum, ch) => sum + glyphWidth(ch) * scale, 0);
+      const needed = line > 0 ? line + 0.5 * scale + w : w;
+      if (line > 0 && needed > usable) {
+        lines++;
+        line = w;
+      } else {
+        line = needed;
+      }
+      while (line > usable) { // a word wider than the cell breaks by character
+        lines++;
+        line -= usable;
+      }
+    }
+  }
+  return lines;
+}
+
 export function renderWorkbook(layout: Layout, projectName: string, today: Date): ExcelJS.Workbook {
   const { weeks, milestones, groups } = layout;
   const wb = new ExcelJS.Workbook();
@@ -168,12 +199,24 @@ export function renderWorkbook(layout: Layout, projectName: string, today: Date)
   ws.getColumn(2).width = 14;
   ws.getColumn(3).width = 12.66;
   for (let c = FIRST_WEEK_COL; c <= lastCol; c++) ws.getColumn(c).width = 13.66;
+  const spanWidth = (from: number, to: number) => {
+    let w = 0;
+    for (let c = from; c <= to; c++) w += ws.getColumn(c).width ?? 0;
+    return w;
+  };
 
-  // title + updated date
-  ws.getRow(2).height = 33;
-  put(2, 2, projectName, bold(22), undefined, { vertical: 'bottom' });
-  put(2, lastCol, `* ${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())} Updated`,
-    { ...bold(14), color: { argb: ARGB.date } }, undefined, { horizontal: 'right', vertical: 'bottom' });
+  // title and updated date each get their own merged span so the date can't spill over the title.
+  // ponytail: the date always takes the last two columns (~27 units fits "* YYYY.MM.DD Updated" at 14pt)
+  const dateCol = Math.max(3, lastCol - 1);
+  const titleLines = textLines(projectName, 22, spanWidth(2, dateCol - 1));
+  ws.getRow(2).height = titleLines === 1 ? 33 : titleLines * 31;
+  const updated = `* ${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())} Updated`;
+  for (let c = 2; c <= lastCol; c++) {
+    if (c < dateCol) put(2, c, c === 2 ? projectName : null, bold(22), undefined, { horizontal: 'left', vertical: 'bottom', wrapText: true });
+    else put(2, c, c === dateCol ? updated : null, { ...bold(14), color: { argb: ARGB.date } }, undefined, { horizontal: 'right', vertical: 'bottom' });
+  }
+  merge(2, 2, 2, dateCol - 1);
+  merge(2, dateCol, 2, lastCol);
 
   // two-row header: 구분 / 상세 / month (merged) / week
   ws.getRow(4).height = 27.75;
@@ -205,6 +248,10 @@ export function renderWorkbook(layout: Layout, projectName: string, today: Date)
     }
     for (const bar of sec.bars) {
       const r = top + bar.lane;
+      // grow the lane when the wrapped name + date line won't fit (10pt ≈ 14pt of row, 8pt ≈ 11.2pt, plus padding)
+      const width = spanWidth(FIRST_WEEK_COL + bar.start, FIRST_WEEK_COL + bar.end);
+      const needed = textLines(bar.name, 10, width) * 14 + textLines(`(${bar.dates})`, 8, width) * 11.2 + 4;
+      ws.getRow(r).height = Math.max(ws.getRow(r).height ?? 0, needed);
       const c1 = FIRST_WEEK_COL + bar.start;
       const c2 = FIRST_WEEK_COL + bar.end;
       const { fill, text } = isMilestone ? { fill: ARGB.milestone, text: ARGB.black } : barColors(bar.color);
