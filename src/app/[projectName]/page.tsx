@@ -136,7 +136,7 @@ export default function ProjectCalendarPage() {
           <span className="text-on-dark-soft text-caption font-medium max-w-[100px] md:max-w-none truncate max-[480px]:hidden">{projectName}</span>
         </div>
         <div className="flex items-center gap-1.5 md:gap-xs">
-          <ExportButtons tasks={filteredTasks()} wbsNodes={wbsNodes} users={users} calendarRef={calendarRef} />
+          <ExportButtons tasks={filteredTasks()} wbsNodes={wbsNodes} users={users} calendarRef={calendarRef} projectName={projectName} />
           <button className="px-2.5 md:px-3.5 py-1.5 rounded-md text-[11px] md:text-xs font-medium border border-white/10 bg-white/[0.08] text-on-dark cursor-pointer" onClick={() => router.push(`/settings?project=${projectId}`)}>
             설정
           </button>
