@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'WBS 캘린더',
+  title: { default: 'WBS 캘린더', template: '%s · WBS 캘린더' },
   description: '팀 프로젝트 WBS 캘린더',
 };
 
