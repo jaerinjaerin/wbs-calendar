@@ -348,6 +348,8 @@ The split is functional:
 | `{typography.body-md}` | 16px | 400 | 1.5 | 0 | Default running-text |
 | `{typography.body-sm}` | 14px | 400 | 1.5 | 0 | Footer body, fine-print |
 | `{typography.caption}` | 13px | 500 | 1.4 | 0 | Badge labels, captions |
+| `body-xs` (WBS 캘린더 전용) | 13px | 호출부 지정 | 1.5 | 0 | 앱 내 밀집 UI 텍스트 — 입력칸, 모달 필드, Toast, 사이드바 |
+| `micro` (WBS 캘린더 전용) | 11px | 호출부 지정 | 1.5 | 0 | 모바일 헤더 버튼, 작업 개수 배지 |
 | `{typography.code}` | 14px | 400 | 1.5 | 0 | Code snippets, API examples — JetBrains Mono |
 | `{typography.button}` | 14px | 600 | 1.0 | 0 | Standard button labels |
 | `{typography.nav-link}` | 14px | 500 | 1.4 | 0 | Top-nav menu items |

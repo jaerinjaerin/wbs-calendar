@@ -32,10 +32,10 @@ const GAP = 8;
 const fmt = (d: string) => `${d.replaceAll('-', '.')}.`;
 
 export const groupCls = 'bg-surface-card rounded-lg px-sm';
-export const rowCls = 'flex items-center gap-xs min-h-9 text-[13px] [&+&]:border-t [&+&]:border-hairline';
+export const rowCls = 'flex items-center gap-xs min-h-9 text-body-xs [&+&]:border-t [&+&]:border-hairline';
 export const labelCls = 'text-muted text-xs shrink-0 w-[52px]';
 export const fieldCls = 'bg-transparent border-none outline-none rounded-sm'; // no focus ring: the caret is enough
-export const selectCls = 'flex-1 min-w-0 bg-transparent border-none outline-none rounded-sm py-xxs px-xxs text-[13px] cursor-pointer hover:bg-surface-strong';
+export const selectCls = 'flex-1 min-w-0 bg-transparent border-none outline-none rounded-sm py-xxs px-xxs text-body-xs cursor-pointer hover:bg-surface-strong';
 
 export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpdate, onDelete, onClose }: TaskPeekPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -109,14 +109,14 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
         <span className="w-1 rounded-xs my-xs shrink-0" style={{ background: node?.color ?? '#ccc' }} />
         <div className="flex-1 min-w-0 flex flex-col">
           <input
-            className={`${fieldCls} text-[16px] font-semibold text-ink py-xs px-xxs w-full`}
+            className={`${fieldCls} text-body-md font-semibold text-ink py-xs px-xxs w-full`}
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={() => commit('name', name)}
             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
           />
           <button
-            className="self-start text-[13px] text-body bg-transparent border-none cursor-pointer rounded-sm px-xxs py-xxs mb-xxs hover:bg-surface-strong"
+            className="self-start text-body-xs text-body bg-transparent border-none cursor-pointer rounded-sm px-xxs py-xxs mb-xxs hover:bg-surface-strong"
             onClick={() => setEditingDates((v) => !v)}
           >
             {fmt(task.start_date)} ~ {fmt(task.end_date)}
@@ -125,11 +125,11 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
             <div className="flex flex-col pb-xxs">
               <div className={rowCls}>
                 <span className={labelCls}>시작</span>
-                <input type="date" className={`${fieldCls} ml-auto text-[13px] px-xxs`} value={task.start_date} onChange={(e) => changeStart(e.target.value)} />
+                <input type="date" className={`${fieldCls} ml-auto text-body-xs px-xxs`} value={task.start_date} onChange={(e) => changeStart(e.target.value)} />
               </div>
               <div className={rowCls}>
                 <span className={labelCls}>종료</span>
-                <input type="date" className={`${fieldCls} ml-auto text-[13px] px-xxs`} value={task.end_date} min={task.start_date} onChange={(e) => changeEnd(e.target.value)} />
+                <input type="date" className={`${fieldCls} ml-auto text-body-xs px-xxs`} value={task.end_date} min={task.start_date} onChange={(e) => changeEnd(e.target.value)} />
               </div>
             </div>
           )}
@@ -174,7 +174,7 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
       {/* memo + url */}
       <div className={groupCls}>
         <textarea
-          className={`${fieldCls} w-full resize-none text-[13px] text-ink py-xs px-xxs min-h-[52px] placeholder:text-muted-soft`}
+          className={`${fieldCls} w-full resize-none text-body-xs text-ink py-xs px-xxs min-h-[52px] placeholder:text-muted-soft`}
           placeholder="메모 추가"
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
@@ -182,7 +182,7 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
         />
         <div className={`${rowCls} border-t border-hairline`}>
           <input
-            className={`${fieldCls} flex-1 min-w-0 text-[13px] text-ink py-xxs px-xxs placeholder:text-muted-soft`}
+            className={`${fieldCls} flex-1 min-w-0 text-body-xs text-ink py-xxs px-xxs placeholder:text-muted-soft`}
             placeholder="URL 추가"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -190,7 +190,7 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
           />
           {/^https?:\/\//i.test(task.url ?? '') && (
-            <a className="text-muted text-[13px] no-underline hover:text-ink" href={task.url!} target="_blank" rel="noopener noreferrer" title="새 탭에서 열기">↗</a>
+            <a className="text-muted text-body-xs no-underline hover:text-ink" href={task.url!} target="_blank" rel="noopener noreferrer" title="새 탭에서 열기">↗</a>
           )}
         </div>
       </div>

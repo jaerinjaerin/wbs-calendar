@@ -128,7 +128,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
     return (
       <div key={node.id}>
         <div
-          className="group flex items-center gap-xs py-1.5 pr-md text-[13px] cursor-pointer relative hover:bg-surface-card"
+          className="group flex items-center gap-xs py-1.5 pr-md text-body-xs cursor-pointer relative hover:bg-surface-card"
           style={{ paddingLeft: 16 + indent }}
           onClick={() => onToggleNode(node.id)}
         >
@@ -148,7 +148,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
           </span>
           {editingId === node.id ? (
             <input
-              className="flex-1 text-[13px] border border-accent rounded-[3px] py-[1px] px-xxs outline-none"
+              className="flex-1 text-body-xs border border-accent rounded-[3px] py-[1px] px-xxs outline-none"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               onBlur={() => handleRename(node.id)}
@@ -164,7 +164,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
               {node.name}
             </span>
           )}
-          <span className="font-mono text-[11px] text-muted-soft bg-surface-card px-1.5 rounded-pill">{node.task_count}</span>
+          <span className="font-mono text-micro text-muted-soft bg-surface-card px-1.5 rounded-pill">{node.task_count}</span>
           <button
             className="opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer text-sm text-muted-soft px-0.5"
             title="하위 분류 추가"
@@ -198,12 +198,12 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
       {adding && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={() => setAdding(null)}>
           <div className="bg-canvas rounded-lg p-lg flex flex-col gap-sm w-[320px] shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <span className="text-[15px] font-semibold text-ink">
+            <span className="text-title-sm font-semibold text-ink">
               {adding.parentId ? '하위 분류 추가' : '분류 추가'}
             </span>
             <input
               ref={nameInputRef}
-              className="w-full text-[13px] border border-hairline rounded-md py-2 px-sm outline-none focus:border-ink"
+              className="w-full text-body-xs border border-hairline rounded-md py-2 px-sm outline-none focus:border-ink"
               placeholder="이름 입력"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -211,7 +211,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
             />
             {!adding.parentId && (
               <div>
-                <span className="text-[12px] text-muted mb-xxs block">색상</span>
+                <span className="text-xs text-muted mb-xxs block">색상</span>
                 <div className="flex gap-xs flex-wrap">
                   {COLOR_PRESETS.map((c) => (
                     <button
@@ -226,13 +226,13 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
             )}
             <div className="flex gap-xs justify-end mt-xs">
               <button
-                className="text-[13px] px-md py-[7px] rounded-md border border-hairline bg-transparent cursor-pointer text-muted"
+                className="text-body-xs px-md py-[7px] rounded-md border border-hairline bg-transparent cursor-pointer text-muted"
                 onClick={() => setAdding(null)}
               >
                 취소
               </button>
               <button
-                className="text-[13px] px-md py-[7px] rounded-md bg-primary text-on-primary cursor-pointer border-none disabled:opacity-40"
+                className="text-body-xs px-md py-[7px] rounded-md bg-primary text-on-primary cursor-pointer border-none disabled:opacity-40"
                 onClick={confirmAdd}
                 disabled={!newName.trim()}
               >
@@ -245,17 +245,17 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
       {deletingId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={() => setDeletingId(null)}>
           <div className="bg-canvas rounded-lg p-lg flex flex-col gap-sm w-[300px] shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <span className="text-[15px] font-semibold text-ink">분류 삭제</span>
-            <p className="text-[13px] text-muted m-0">이 분류와 하위 분류가 모두 삭제됩니다. 계속하시겠습니까?</p>
+            <span className="text-title-sm font-semibold text-ink">분류 삭제</span>
+            <p className="text-body-xs text-muted m-0">이 분류와 하위 분류가 모두 삭제됩니다. 계속하시겠습니까?</p>
             <div className="flex gap-xs justify-end mt-xs">
               <button
-                className="text-[13px] px-md py-[7px] rounded-md border border-hairline bg-transparent cursor-pointer text-muted"
+                className="text-body-xs px-md py-[7px] rounded-md border border-hairline bg-transparent cursor-pointer text-muted"
                 onClick={() => setDeletingId(null)}
               >
                 취소
               </button>
               <button
-                className="text-[13px] px-md py-[7px] rounded-md bg-error text-on-primary cursor-pointer border-none"
+                className="text-body-xs px-md py-[7px] rounded-md bg-error text-on-primary cursor-pointer border-none"
                 onClick={confirmDelete}
               >
                 삭제

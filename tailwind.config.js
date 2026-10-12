@@ -49,6 +49,9 @@ module.exports = {
         'body-md': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
         'body-sm': ['14px', { lineHeight: '1.5', fontWeight: '400' }],
         caption: ['13px', { lineHeight: '1.4', fontWeight: '500' }],
+        // app-only dense sizes; weight left to the call site
+        'body-xs': ['13px', { lineHeight: '1.5' }],
+        micro: ['11px', { lineHeight: '1.5' }],
       },
       borderRadius: {
         xs: '4px',

@@ -28,7 +28,7 @@ export default function WbsSelect({ nodes, value, onChange }: { nodes: WbsNode[]
     <div ref={ref} className="relative flex-1 min-w-0">
       <button
         type="button"
-        className="w-full flex items-center gap-xs bg-transparent border-none rounded-sm py-xxs px-xxs text-[13px] text-ink cursor-pointer hover:bg-surface-strong text-left"
+        className="w-full flex items-center gap-xs bg-transparent border-none rounded-sm py-xxs px-xxs text-body-xs text-ink cursor-pointer hover:bg-surface-strong text-left"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -44,7 +44,7 @@ export default function WbsSelect({ nodes, value, onChange }: { nodes: WbsNode[]
               key={n.id}
               role="option"
               aria-selected={n.id === value}
-              className={`flex items-center gap-xs py-1.5 pr-sm text-[13px] cursor-pointer hover:bg-surface-card ${n.id === value ? 'font-semibold' : ''}`}
+              className={`flex items-center gap-xs py-1.5 pr-sm text-body-xs cursor-pointer hover:bg-surface-card ${n.id === value ? 'font-semibold' : ''}`}
               style={{ paddingLeft: 8 + n.depth * 16 }}
               onClick={() => { onChange(n.id); setOpen(false); }}
             >

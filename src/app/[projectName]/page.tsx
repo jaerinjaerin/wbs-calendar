@@ -118,7 +118,7 @@ export default function ProjectCalendarPage() {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-md">
         <p className="text-body-md text-muted">프로젝트를 찾을 수 없습니다</p>
-        <button className="py-xs px-5 rounded-md border border-hairline bg-canvas text-[13px] font-medium cursor-pointer" onClick={() => router.push('/')}>
+        <button className="py-xs px-5 rounded-md border border-hairline bg-canvas text-body-xs font-medium cursor-pointer" onClick={() => router.push('/')}>
           ← 프로젝트 목록
         </button>
       </div>
@@ -134,12 +134,12 @@ export default function ProjectCalendarPage() {
       <header className="flex items-center justify-between px-3 h-12 md:px-5 md:h-14 bg-surface-dark shrink-0">
         <div className="flex items-center gap-xs md:gap-sm">
           <button className="bg-transparent border-none text-on-dark text-base cursor-pointer px-xs py-xxs rounded-md hover:bg-white/[0.08]" onClick={() => router.push('/')} aria-label="프로젝트 목록">←</button>
-          <span className="font-display text-[13px] md:text-[15px] font-medium text-on-dark">WBS 캘린더</span>
+          <span className="font-display text-body-xs md:text-title-sm text-on-dark">WBS 캘린더</span>
           <span className="text-on-dark-soft text-caption font-medium max-w-[100px] md:max-w-none truncate max-[480px]:hidden">{projectName}</span>
         </div>
         <div className="flex items-center gap-1.5 md:gap-xs">
           <ExportButtons tasks={filteredTasks()} wbsNodes={wbsNodes} users={users} calendarRef={calendarRef} projectName={projectName} />
-          <button className="px-2.5 md:px-3.5 py-1.5 rounded-md text-[11px] md:text-xs font-medium border border-white/10 bg-white/[0.08] text-on-dark cursor-pointer" onClick={() => router.push(`/settings?project=${projectId}`)}>
+          <button className="px-2.5 md:px-3.5 py-1.5 rounded-md text-micro md:text-xs font-medium border border-white/10 bg-white/[0.08] text-on-dark cursor-pointer" onClick={() => router.push(`/settings?project=${projectId}`)}>
             설정
           </button>
           <button className="flex md:hidden w-9 h-9 rounded-md border border-white/10 bg-white/[0.08] text-on-dark text-lg cursor-pointer items-center justify-center" onClick={() => setSidebarOpen((v) => !v)} aria-label="WBS 메뉴">

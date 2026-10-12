@@ -71,7 +71,7 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
           <span className="w-1 rounded-xs my-xs shrink-0" style={{ background: color }} />
           <div className="flex-1 min-w-0 flex flex-col pb-xxs">
             <input
-              className={`${fieldCls} text-[16px] font-semibold text-ink py-xs px-xxs w-full placeholder:text-muted-soft`}
+              className={`${fieldCls} text-body-md font-semibold text-ink py-xs px-xxs w-full placeholder:text-muted-soft`}
               placeholder="새로운 작업"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -80,11 +80,11 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
             />
             <div className={rowCls}>
               <span className={labelCls}>시작</span>
-              <input type="date" className={`${fieldCls} ml-auto text-[13px] px-xxs`} value={startDate} onChange={(e) => changeStart(e.target.value)} required />
+              <input type="date" className={`${fieldCls} ml-auto text-body-xs px-xxs`} value={startDate} onChange={(e) => changeStart(e.target.value)} required />
             </div>
             <div className={rowCls}>
               <span className={labelCls}>종료</span>
-              <input type="date" className={`${fieldCls} ml-auto text-[13px] px-xxs`} value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} required />
+              <input type="date" className={`${fieldCls} ml-auto text-body-xs px-xxs`} value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} required />
             </div>
           </div>
         </div>
@@ -127,14 +127,14 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
         {/* memo + url */}
         <div className={groupCls}>
           <textarea
-            className={`${fieldCls} w-full resize-none text-[13px] text-ink py-xs px-xxs min-h-[52px] placeholder:text-muted-soft`}
+            className={`${fieldCls} w-full resize-none text-body-xs text-ink py-xs px-xxs min-h-[52px] placeholder:text-muted-soft`}
             placeholder="메모 추가"
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
           />
           <div className={`${rowCls} border-t border-hairline`}>
             <input
-              className={`${fieldCls} flex-1 min-w-0 text-[13px] text-ink py-xxs px-xxs placeholder:text-muted-soft`}
+              className={`${fieldCls} flex-1 min-w-0 text-body-xs text-ink py-xxs px-xxs placeholder:text-muted-soft`}
               placeholder="URL 추가"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -143,8 +143,8 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
         </div>
 
         <div className="flex justify-end gap-xs">
-          <button type="button" className="h-8 px-md border border-hairline rounded-md bg-canvas text-[13px] font-semibold cursor-pointer" onClick={onClose}>취소</button>
-          <button type="submit" className="h-8 px-md border-none rounded-md bg-primary text-on-primary text-[13px] font-semibold cursor-pointer">추가</button>
+          <button type="button" className="h-8 px-md border border-hairline rounded-md bg-canvas text-body-xs font-semibold cursor-pointer" onClick={onClose}>취소</button>
+          <button type="submit" className="h-8 px-md border-none rounded-md bg-primary text-on-primary text-body-xs font-semibold cursor-pointer">추가</button>
         </div>
       </form>
     </div>
