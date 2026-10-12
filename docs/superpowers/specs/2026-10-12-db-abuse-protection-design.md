@@ -52,14 +52,16 @@
 | 파일 | 역할 |
 |---|---|
 | `src/lib/server/db.ts` | 서버 전용 Supabase 클라이언트. `import 'server-only'`, 기존 `NEXT_PUBLIC_SUPABASE_URL`(공개돼도 되는 값) + 새 `SUPABASE_SECRET_KEY` |
-| `src/lib/server/rateLimit.ts` | 한도 상수, `clientIp(headers)`, `limit(kind)` |
+| `src/lib/server/rateLimit.ts` | 한도 상수, `clientIp`, `isAllowed` (DB 호출을 주입받는 순수 로직) |
+| `src/lib/server/password.ts` | `passwordMatches` (`timingSafeEqual` 비교) |
+| `src/lib/actionResult.ts` | 액션 결과 타입, `errorMessage` (클라이언트·서버 공용) |
 | `src/lib/validate.ts` | 입력 검증 순수 함수 (서버·테스트 공용) |
-| `src/app/actions.ts` | `'use server'` 서버 액션 전부 |
+| `src/app/actions.ts` | `'use server'` 서버 액션 전부, 내부 헬퍼 `limited(kind)` |
 | `supabase/migrations/20261012000001_rate_limits.sql` | 마이그레이션 ①: 요청 제한 테이블·함수 |
 | `supabase/migrations/20261012000002_lockdown.sql` | 마이그레이션 ②: RLS 켜기, 익명 권한 회수 |
-| `src/lib/__tests__/rateLimit.test.ts`, `validate.test.ts` | Vitest |
+| `src/lib/__tests__/rateLimit.test.ts`, `validate.test.ts`, `actionResult.test.ts`, `password.test.ts` | Vitest |
 
-**삭제**: `src/lib/supabase.ts`(브라우저 클라이언트), `src/utils/supabase/`(사용처 없음). 클라이언트 코드의 `hashPin`/`verifyPin` 사용도 사라진다(`src/lib/auth.ts`는 서버에서 계속 사용).
+**삭제**: `src/lib/supabase.ts`(브라우저 클라이언트), `src/utils/supabase/`(사용처 없음)와 `@supabase/ssr` 패키지. 클라이언트 코드의 `hashPin`/`verifyPin` 사용도 사라진다(`src/lib/auth.ts`는 서버에서 계속 사용).
 
 ### 3.1 서버 액션
 
@@ -71,11 +73,11 @@
 - `'23505'`: 이미 저장됨 (기존 재시도 로직이 성공으로 처리)
 - 그 밖의 Postgres 오류 코드 그대로
 
-모든 액션은 첫 줄에서 `limit(kind)`를 호출하고, 다음으로 입력을 검증한 뒤 DB 작업을 한다.
+모든 액션은 첫 줄에서 `limited(kind)`를 호출하고, 다음으로 입력을 검증한 뒤 DB 작업을 한다.
 
 | 화면 | 액션 | 종류 | 비고 |
 |---|---|---|---|
-| 첫 화면 | `listProjects()` | read | `id, name, created_at`만 반환 |
+| 첫 화면 | `listProjects()` | read | `id, name`만 반환 (최신순) |
 | | `createProject(name, adminName, password)` | project_create | 프로젝트 → 관리자(pm) → `owner_id` 연결을 서버에서 순서대로. 해싱도 서버. 반환: 프로젝트 `name` |
 | 캘린더 | `getProjectByName(name)` | read | `id, name` |
 | | `loadProjectData(projectId)` | read | 해당 프로젝트의 분류, 팀원, **그 분류에 속한 작업만** |
@@ -160,7 +162,7 @@ grant execute on function hit_rate_limit(text, int, int) to service_role;
 
 - 키는 `${kind}:${ip}`. 예: `create:203.0.113.7`.
 - `clientIp`는 `x-forwarded-for`의 첫 값을 앞뒤 공백을 제거해 쓴다. 헤더가 없으면 `'unknown'`. Vercel은 이 헤더를 덮어쓰므로 사용자가 조작할 수 없다.
-- `limit(kind)`는 RPC가 `false`를 돌려주면 `rate_limited` 오류를 반환한다. RPC 자체가 실패하면 `console.error`만 남기고 통과시킨다.
+- `limited(kind)`(`actions.ts` 내부)는 RPC가 `false`를 돌려주면 `rate_limited` 오류를 반환한다. RPC 자체가 실패하면 `console.error`만 남기고 통과시킨다.
 - 고정 구간이라 구간 경계에서 최대 2배까지 통과할 수 있다. 남용 방지 목적에는 충분하다고 보고, `rateLimit.ts`에 `ponytail:` 주석으로 남긴다.
 
 ## 5. 잠금 (마이그레이션 ②)
