@@ -10,6 +10,9 @@ export interface Project {
   owner_id: string | null;
 }
 
+// what actions return for a project: never includes admin_password_hash
+export type ProjectSummary = Pick<Project, 'id' | 'name'>;
+
 export interface User {
   id: string;
   name: string;
