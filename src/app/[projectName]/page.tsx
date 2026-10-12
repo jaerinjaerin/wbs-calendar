@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { getProjectByName, loadProjectData, createTask, updateTask, deleteTask } from '@/app/actions';
+import { errorMessage } from '@/lib/actionResult';
 import WbsTree from '@/components/WbsTree';
 import CalendarView from '@/components/CalendarView';
 import type { CalendarViewHandle } from '@/components/CalendarView';
@@ -33,29 +34,30 @@ export default function ProjectCalendarPage() {
   const { showToast, hideToast, toastNode } = useToast();
 
   const loadData = useCallback(async (pid: string) => {
-    const [{ data: t }, { data: n }, { data: u }] = await Promise.all([
-      supabase.from('tasks').select('*'),
-      supabase.from('wbs_nodes').select('*').eq('project_id', pid),
-      supabase.from('users').select('*').eq('project_id', pid),
-    ]);
-    if (t) setTasks(t);
-    if (n) setWbsNodes(n);
-    if (u) setUsers(u);
+    const { data, error } = await loadProjectData(pid);
+    if (!data) {
+      console.error(error);
+      showToast({ message: errorMessage(error, '데이터를 불러오지 못했습니다') });
+      return;
+    }
+    setTasks(data.tasks);
+    setWbsNodes(data.wbsNodes);
+    setUsers(data.users);
+    // showToast only touches state setters and a ref, so it's safe to leave out of deps
   }, []);
 
   useEffect(() => {
-    const name = decodeURIComponent(params.projectName);
-    supabase
-      .from('projects')
-      .select('*')
-      .eq('name', name)
-      .single()
-      .then(({ data }) => {
-        if (!data) { setNotFound(true); return; }
-        setProjectId(data.id);
-        setProjectName(data.name);
-        loadData(data.id);
-      });
+    getProjectByName(decodeURIComponent(params.projectName)).then(({ data, error }) => {
+      if (error) {
+        console.error(error);
+        showToast({ message: errorMessage(error, '프로젝트를 불러오지 못했습니다') });
+        return;
+      }
+      if (!data) { setNotFound(true); return; }
+      setProjectId(data.id);
+      setProjectName(data.name);
+      loadData(data.id);
+    });
   }, [params.projectName, loadData]);
 
   function filteredTasks(): Task[] {
@@ -77,19 +79,24 @@ export default function ProjectCalendarPage() {
   }
 
   async function handleUpdateTask(taskId: string, changes: Partial<Task>) {
-    await supabase.from('tasks').update(changes).eq('id', taskId);
+    const { error } = await updateTask(taskId, changes);
+    if (error) {
+      console.error(error);
+      showToast({ message: errorMessage(error, '작업 수정에 실패했습니다') });
+    }
+    // reload either way: on failure this snaps a dragged bar back to its saved dates
     if (projectId) await loadData(projectId);
   }
 
   // optimistic: show immediately, roll back on failure. Client-side id makes retries idempotent (PK conflict).
   async function insertTask(task: Task) {
     setTasks((prev) => [...prev, task]);
-    const { error } = await supabase.from('tasks').insert(task);
+    const { error } = await createTask(task);
     // 23505 = unique violation: an earlier attempt already landed, so treat as success
     if (error && error.code !== '23505') {
       console.error(error);
       setTasks((prev) => prev.filter((t) => t.id !== task.id));
-      showToast({ message: '작업 추가에 실패했습니다', onRetry: () => { hideToast(); insertTask(task); } });
+      showToast({ message: errorMessage(error, '작업 추가에 실패했습니다'), onRetry: () => { hideToast(); insertTask(task); } });
       return;
     }
     if (projectId) await loadData(projectId);
@@ -104,11 +111,11 @@ export default function ProjectCalendarPage() {
   async function handleDeleteTask(task: Task) {
     setSelectedTaskId(null);
     setTasks((prev) => prev.filter((t) => t.id !== task.id));
-    const { error } = await supabase.from('tasks').delete().eq('id', task.id);
+    const { error } = await deleteTask(task.id);
     if (error) {
       console.error(error);
       setTasks((prev) => [...prev, task]);
-      showToast({ message: '작업 삭제에 실패했습니다', onRetry: () => { hideToast(); handleDeleteTask(task); } });
+      showToast({ message: errorMessage(error, '작업 삭제에 실패했습니다'), onRetry: () => { hideToast(); handleDeleteTask(task); } });
       return;
     }
     if (projectId) await loadData(projectId);

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { loadWbsTree, createWbsNode, renameWbsNode, deleteWbsNode } from '@/app/actions';
+import { errorMessage } from '@/lib/actionResult';
 import { buildTree } from '@/lib/wbs';
 import type { WbsTreeNode } from '@/types';
 import { useToast } from '@/components/Toast';
@@ -32,15 +33,13 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
   const { showToast, toastNode } = useToast();
 
   const loadTree = useCallback(async () => {
-    const [{ data: nodes }, { data: counts }] = await Promise.all([
-      supabase.from('wbs_nodes').select('*').eq('project_id', projectId).order('sort_order'),
-      supabase.from('tasks').select('wbs_node_id').then(({ data }) => {
-        const map: Record<string, number> = {};
-        data?.forEach((t) => { map[t.wbs_node_id] = (map[t.wbs_node_id] ?? 0) + 1; });
-        return { data: map };
-      }),
-    ]);
-    if (nodes) setTree(buildTree(nodes, counts ?? {}));
+    const { data, error } = await loadWbsTree(projectId);
+    if (!data) {
+      console.error(error);
+      showToast({ message: errorMessage(error, '분류를 불러오지 못했습니다') });
+      return;
+    }
+    setTree(buildTree(data.nodes, data.counts));
   }, [projectId]);
 
   useEffect(() => { loadTree(); }, [loadTree]);
@@ -84,7 +83,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
 
     // close first so repeat clicks/Enter can't insert duplicates
     setAdding(null);
-    const { error } = await supabase.from('wbs_nodes').insert({
+    const { error } = await createWbsNode({
       project_id: projectId,
       parent_id: parentId,
       name: newName.trim(),
@@ -94,7 +93,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
     });
     if (error) {
       console.error(error);
-      showToast({ message: '분류 추가에 실패했습니다' });
+      showToast({ message: errorMessage(error, '분류 추가에 실패했습니다') });
     }
     if (parentId) setCollapsed((prev) => { const next = new Set(prev); next.delete(parentId); return next; });
     await loadTree();
@@ -103,7 +102,11 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
 
   async function handleRename(id: string) {
     if (!editName.trim()) return;
-    await supabase.from('wbs_nodes').update({ name: editName }).eq('id', id);
+    const { error } = await renameWbsNode(id, editName);
+    if (error) {
+      console.error(error);
+      showToast({ message: errorMessage(error, '분류 이름 변경에 실패했습니다') });
+    }
     setEditingId(null);
     await loadTree();
     onDataChange?.();
@@ -113,7 +116,11 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
 
   async function confirmDelete() {
     if (!deletingId) return;
-    await supabase.from('wbs_nodes').delete().eq('id', deletingId);
+    const { error } = await deleteWbsNode(deletingId);
+    if (error) {
+      console.error(error);
+      showToast({ message: errorMessage(error, '분류 삭제에 실패했습니다') });
+    }
     setDeletingId(null);
     await loadTree();
     onDataChange?.();
