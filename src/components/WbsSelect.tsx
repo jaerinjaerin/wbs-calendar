@@ -5,7 +5,7 @@ import type { WbsNode } from '@/types';
 import { flattenHierarchical } from '@/lib/wbs';
 
 const Badge = ({ color }: { color: string }) => (
-  <span className="w-3 h-3 rounded-[3px] shrink-0" style={{ background: color }} />
+  <span className="w-3 h-3 rounded-xs shrink-0" style={{ background: color }} />
 );
 
 // native <option> can't render color badges, so this is a minimal custom dropdown
@@ -35,10 +35,10 @@ export default function WbsSelect({ nodes, value, onChange }: { nodes: WbsNode[]
       >
         <Badge color={current?.color ?? '#ccc'} />
         <span className="flex-1 truncate">{current?.name ?? '분류 선택'}</span>
-        <span className="text-muted-soft text-[10px]">▾</span>
+        <span className="text-muted-soft text-micro">▾</span>
       </button>
       {open && (
-        <ul role="listbox" className="absolute left-0 right-0 top-full mt-1 z-50 max-h-60 overflow-y-auto bg-canvas border border-hairline rounded-md shadow-lg py-xxs list-none m-0 p-0">
+        <ul role="listbox" className="absolute left-0 right-0 top-full mt-1 z-50 max-h-60 overflow-y-auto bg-canvas border border-hairline rounded-md shadow-card py-xxs list-none m-0 p-0">
           {sorted.map((n) => (
             <li
               key={n.id}
@@ -50,7 +50,7 @@ export default function WbsSelect({ nodes, value, onChange }: { nodes: WbsNode[]
             >
               <Badge color={n.color} />
               <span className="flex-1 truncate">{n.name}</span>
-              {n.id === value && <span className="text-[11px]">✓</span>}
+              {n.id === value && <span className="text-micro">✓</span>}
             </li>
           ))}
         </ul>

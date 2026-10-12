@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import type { Task, WbsNode } from '@/types';
+import { lighter80 } from './color';
 
 export const DAY = 86_400_000;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -124,6 +125,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 // black text when it out-contrasts white (relative luminance above ~0.179)
 export function barColors(hex: string): { fill: string; text: string } {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return { fill: ARGB.fallbackBar, text: ARGB.black };
+  hex = lighter80(hex); // bars use Excel's "Lighter 80%" of the category color
   const [r, g, b] = [1, 3, 5].map((i) => {
     const c = parseInt(hex.slice(i, i + 2), 16) / 255;
     return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;

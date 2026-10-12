@@ -5,11 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { verifyPin } from '@/lib/auth';
 import { useToast } from '@/components/Toast';
+import { inputCls, primaryBtn, secondaryBtn, dangerBtn, modalOverlay, modalCard } from '@/lib/styles';
 import type { User, Project } from '@/types';
 
-const inputCls = 'h-10 px-3.5 w-full border border-hairline rounded-md bg-canvas text-body-md text-ink font-sans outline-none placeholder:text-muted-soft focus:border-ink';
-const primaryBtn = 'h-10 px-5 rounded-md border-none bg-primary text-on-primary text-body-sm font-semibold cursor-pointer whitespace-nowrap hover:bg-primary-active disabled:bg-primary-disabled disabled:text-muted disabled:cursor-not-allowed';
-const secondaryBtn = 'h-10 px-4 inline-flex items-center gap-1.5 rounded-md border border-hairline bg-canvas text-ink text-body-sm font-semibold cursor-pointer whitespace-nowrap hover:bg-surface-card';
 const cardCls = 'bg-canvas border border-hairline rounded-lg p-lg mb-md';
 
 function SettingsInner() {
@@ -185,7 +183,7 @@ function SettingsInner() {
             <li key={u.id} className="group flex items-center gap-sm py-sm">
               <span className="w-7 h-7 rounded-full bg-surface-card text-ink text-caption flex items-center justify-center shrink-0">{u.name.charAt(0)}</span>
               <span className="flex-1 text-body-sm text-ink truncate">{u.name}</span>
-              <span className={`text-xs font-medium py-0.5 px-2 rounded-pill ${u.role === 'pm' ? 'bg-primary text-on-primary' : 'bg-surface-card text-muted'}`}>{u.role === 'pm' ? 'PM' : '팀원'}</span>
+              <span className={`text-caption py-0.5 px-xs rounded-pill ${u.role === 'pm' ? 'bg-primary text-on-primary' : 'bg-surface-card text-muted'}`}>{u.role === 'pm' ? '관리자' : '팀원'}</span>
               {u.role !== 'pm' && (
                 // ponytail: always visible on touch screens, hover-reveal from md up
                 <button className="text-caption text-muted hover:text-error bg-transparent border-none cursor-pointer md:opacity-0 md:group-hover:opacity-100 focus:opacity-100" onClick={() => handleDeleteUser(u)}>삭제</button>
@@ -228,13 +226,13 @@ function SettingsInner() {
         </button>
       </section>
       {confirmingDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={() => setConfirmingDelete(false)}>
-          <div role="alertdialog" aria-modal="true" className="bg-canvas rounded-lg p-lg flex flex-col gap-sm w-[320px] shadow-lg" onClick={(e) => e.stopPropagation()}>
+        <div className={modalOverlay} onClick={() => setConfirmingDelete(false)}>
+          <div role="alertdialog" aria-modal="true" className={`${modalCard} flex flex-col gap-sm`} onClick={(e) => e.stopPropagation()}>
             <span className="text-title-sm text-ink">&quot;{project.name}&quot; 삭제</span>
             <p className="text-body-sm text-muted m-0">모든 분류·작업·팀원 데이터가 함께 삭제되며 되돌릴 수 없습니다.</p>
             <div className="flex gap-xs justify-end mt-xs">
               <button className={secondaryBtn} onClick={() => setConfirmingDelete(false)} autoFocus>취소</button>
-              <button className="h-10 px-4 rounded-md border-none bg-error text-on-primary text-body-sm font-semibold cursor-pointer" onClick={handleDeleteProject}>삭제</button>
+              <button className={dangerBtn} onClick={handleDeleteProject}>삭제</button>
             </div>
           </div>
         </div>

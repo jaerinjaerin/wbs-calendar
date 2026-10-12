@@ -122,8 +122,9 @@ describe('buildLayout', () => {
 
 describe('naming and colors', () => {
   it('picks the higher-contrast text color and falls back on bad hex', () => {
-    expect(barColors('#3563e9')).toEqual({ fill: 'FF3563E9', text: 'FFFFFFFF' });
-    expect(barColors('#f6c344')).toEqual({ fill: 'FFF6C344', text: 'FF000000' });
+    // fill is Excel's "Lighter 80%" of the category color, so text ends up black
+    expect(barColors('#4472C4')).toEqual({ fill: 'FFD9E1F2', text: 'FF000000' });
+    expect(barColors('#FFC000')).toEqual({ fill: 'FFFFF2CC', text: 'FF000000' });
     expect(barColors('#1a9e8f').text).toBe('FF000000');
     expect(barColors('#abc')).toEqual({ fill: 'FFD9D9D9', text: 'FF000000' });
     expect(barColors('')).toEqual({ fill: 'FFD9D9D9', text: 'FF000000' });
@@ -193,7 +194,7 @@ describe('renderWorkbook', () => {
 
     expect(ws.getCell('D7').text).toBe('스토리보드 제안\n(7/7~7/24)');
     expect(ws.getCell('F7').master.address).toBe('D7');
-    expect((ws.getCell('F7').fill as ExcelJS.FillPattern).fgColor?.argb).toBe('FF1A9E8F');
+    expect((ws.getCell('F7').fill as ExcelJS.FillPattern).fgColor?.argb).toBe('FFC7F6F0');
     expect(ws.getCell('D8').text).toBe('월페 입수\n(7/8)');
     expect(ws.getCell('E6').text).toBe('1차 작업 진행\n(7/14~7/31)');
     expect(ws.getCell('G6').master.address).toBe('E6');

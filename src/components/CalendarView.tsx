@@ -5,6 +5,7 @@ import type { ComponentType } from 'react';
 import '@toast-ui/calendar/dist/toastui-calendar.min.css';
 import type { Task, WbsNode, User } from '@/types';
 import { getHolidays } from '@/lib/holidays';
+import { lighter80 } from '@/lib/color';
 
 function pad(n: number) { return n.toString().padStart(2, '0'); }
 
@@ -26,11 +27,11 @@ export interface CalendarViewHandle {
 // ponytail: calendars prop lets the library own color mapping per calendarId
 function toCalendarInfos(wbsNodes: WbsNode[]) {
   return wbsNodes.map((n) => {
-    const c = n.color ?? '#3563e9';
+    const c = n.color ?? '#4472C4';
     return {
       id: n.id,
       name: n.name,
-      backgroundColor: c + '20',
+      backgroundColor: lighter80(c),
       borderColor: c,
       color: '#333',
     };
@@ -129,12 +130,12 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
             </button>
           </div>
           <div className="flex items-center justify-between pb-2.5">
-            <span className="text-lg md:text-xl font-bold tracking-tight">{dateLabel}</span>
+            <span className="text-title-md md:text-title-lg">{dateLabel}</span>
             <div className="flex items-center gap-1">
               <button className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer border-none bg-transparent text-muted hover:bg-surface-card" aria-label="이전 달" onClick={() => navigate('prev')}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
-              <button className="text-sm px-4 py-1.5 rounded-full border border-hairline bg-canvas cursor-pointer font-medium hover:bg-surface-card" onClick={() => navigate('today')}>오늘</button>
+              <button className="text-body-sm px-4 py-1.5 rounded-pill border border-hairline bg-canvas cursor-pointer font-medium hover:bg-surface-card" onClick={() => navigate('today')}>오늘</button>
               <button className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer border-none bg-transparent text-muted hover:bg-surface-card" aria-label="다음 달" onClick={() => navigate('next')}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>

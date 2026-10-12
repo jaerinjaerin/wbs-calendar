@@ -16,60 +16,60 @@ body {
 .toastui-calendar-day-name__name,
 .toastui-calendar-day-name__date {
   font-family: inherit;
-  color: #111111;
+  color: theme('colors.primary');
 }
 
 .toastui-calendar-weekday-grid-date {
-  color: #374151;
-  font-size: 13px;
+  color: theme('colors.body');
+  font-size: theme('fontSize.body-xs[0]');
   font-weight: 500;
 }
 
 .toastui-calendar-weekday-grid-date-decorator {
-  background-color: #111111 !important;
-  border-radius: 9999px;
-  color: #ffffff !important;
+  background-color: theme('colors.primary') !important;
+  border-radius: theme('borderRadius.pill');
+  color: theme('colors.on-primary') !important;
 }
 
 .toastui-calendar-holiday {
-  color: #ef4444;
+  color: theme('colors.error');
 }
 
 .toastui-calendar-day-name-item:first-child .toastui-calendar-day-name__name,
 .toastui-calendar-day-name-item:first-child .toastui-calendar-day-name__date {
-  color: #ef4444;
+  color: theme('colors.error');
 }
 
 .toastui-calendar-weekday-grid .toastui-calendar-daygrid-cell:nth-child(7n + 1) .toastui-calendar-weekday-grid-date {
-  color: #ef4444;
+  color: theme('colors.error');
 }
 
 /* Grid lines */
 .toastui-calendar-daygrid-cell {
-  border-color: #e5e7eb;
+  border-color: theme('colors.hairline');
 }
 
 .toastui-calendar-column {
-  border-color: #e5e7eb;
+  border-color: theme('colors.hairline');
 }
 
 .toastui-calendar-panel-resizer {
-  border-color: #e5e7eb;
+  border-color: theme('colors.hairline');
 }
 
 .toastui-calendar-gridline-half {
-  border-color: #f3f4f6;
+  border-color: theme('colors.hairline-soft');
 }
 
 .toastui-calendar-timegrid-time {
-  color: #6b7280;
-  font-size: 11px;
+  color: theme('colors.muted');
+  font-size: theme('fontSize.micro[0]');
 }
 
 /* Event bars */
 .toastui-calendar-weekday-event {
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: theme('borderRadius.sm');
+  font-size: theme('fontSize.body-xs[0]');
   font-weight: 500;
 }
 
@@ -79,52 +79,52 @@ body {
 
 /* Grid selection (drag) */
 .toastui-calendar-grid-selection {
-  background-color: rgba(17, 17, 17, 0.06);
-  border: 1px solid rgba(17, 17, 17, 0.15);
-  border-radius: 4px;
+  background-color: theme('colors.primary / 6%');
+  border: 1px solid theme('colors.primary / 15%');
+  border-radius: theme('borderRadius.xs');
 }
 
 /* Day names header row */
 .toastui-calendar-day-names {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid theme('colors.hairline');
 }
 
 .toastui-calendar-day-name-item {
-  border-left-color: #e5e7eb;
+  border-left-color: theme('colors.hairline');
 }
 
 /* Week view time column */
 .toastui-calendar-timegrid-time-column .toastui-calendar-timegrid-time {
-  color: #898989;
+  color: theme('colors.muted-soft');
 }
 
 .toastui-calendar-timezone-labels-slot {
-  background-color: #ffffff;
-  border-bottom-color: #e5e7eb;
+  background-color: theme('colors.on-primary');
+  border-bottom-color: theme('colors.hairline');
 }
 
 .toastui-calendar-timezone-labels-slot .toastui-calendar-timegrid-timezone-label {
-  background-color: #ffffff;
-  border-right-color: #e5e7eb;
+  background-color: theme('colors.on-primary');
+  border-right-color: theme('colors.hairline');
 }
 
 /* "more events" link */
 .toastui-calendar-grid-cell-more-events {
-  color: #6b7280;
-  font-size: 11px;
+  color: theme('colors.muted');
+  font-size: theme('fontSize.micro[0]');
   font-weight: 500;
 }
 
 /* Now indicator */
 .toastui-calendar-timegrid-now-indicator-marker {
-  background-color: #ef4444;
+  background-color: theme('colors.error');
 }
 
 .toastui-calendar-timegrid-now-indicator-today {
-  border-color: #ef4444;
+  border-color: theme('colors.error');
 }
 
 .toastui-calendar-timegrid-current-time {
-  color: #ef4444;
+  color: theme('colors.error');
   font-weight: 600;
 }

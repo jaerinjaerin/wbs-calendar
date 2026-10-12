@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { modalOverlay, modalCard } from '@/lib/styles';
 
 interface PinModalProps {
   userName: string;
@@ -44,16 +45,16 @@ export default function PinModal({ userName, onSubmit, onClose, error }: PinModa
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={onClose}>
-      <div className="bg-canvas rounded-lg p-xl text-center min-w-[300px] shadow-[0_8px_32px_rgba(0,0,0,0.12)]" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-title-md mb-xxs">{userName}</h2>
+    <div className={modalOverlay} onClick={onClose}>
+      <div className={`${modalCard} text-center`} onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-title-sm text-ink mb-xxs">{userName}</h2>
         <p className="text-caption text-muted mb-lg">PIN 4자리를 입력하세요</p>
         <div className="flex gap-sm justify-center mb-md">
           {digits.map((d, i) => (
             <input
               key={i}
               ref={(el) => { inputRefs.current[i] = el; }}
-              className="w-12 h-14 border-2 border-hairline rounded-md text-center text-2xl outline-none focus:border-primary"
+              className="w-12 h-14 border-2 border-hairline rounded-md text-center text-title-lg outline-none focus:border-primary"
               type="password"
               inputMode="numeric"
               maxLength={1}

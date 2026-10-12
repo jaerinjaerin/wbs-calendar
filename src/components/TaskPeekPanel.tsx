@@ -33,7 +33,7 @@ const fmt = (d: string) => `${d.replaceAll('-', '.')}.`;
 
 export const groupCls = 'bg-surface-card rounded-lg px-sm';
 export const rowCls = 'flex items-center gap-xs min-h-9 text-body-xs [&+&]:border-t [&+&]:border-hairline';
-export const labelCls = 'text-muted text-xs shrink-0 w-[52px]';
+export const labelCls = 'text-muted text-body-xs shrink-0 w-[52px]';
 export const fieldCls = 'bg-transparent border-none outline-none rounded-sm'; // no focus ring: the caret is enough
 export const selectCls = 'flex-1 min-w-0 bg-transparent border-none outline-none rounded-sm py-xxs px-xxs text-body-xs cursor-pointer hover:bg-surface-strong';
 
@@ -102,7 +102,7 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
     <div
       ref={panelRef}
       style={{ width: POPOVER_W, left, top }}
-      className="fixed z-50 bg-canvas rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-hairline p-xs flex flex-col gap-xs"
+      className="fixed z-50 bg-canvas rounded-lg shadow-card border border-hairline p-xs flex flex-col gap-xs"
     >
       {/* title + period */}
       <div className={`${groupCls} flex gap-sm`}>
@@ -196,7 +196,7 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
       </div>
 
       <div className="px-xxs">
-        <button className="text-error text-xs cursor-pointer bg-transparent border-none py-xxs px-0 hover:underline" onClick={onDelete}>작업 삭제</button>
+        <button className="text-error text-body-xs cursor-pointer bg-transparent border-none py-xxs px-0 hover:underline" onClick={onDelete}>작업 삭제</button>
       </div>
     </div>
   );

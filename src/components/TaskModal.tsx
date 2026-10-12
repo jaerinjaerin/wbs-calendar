@@ -5,6 +5,7 @@ import type { Task, WbsNode, User, TaskStatus, TaskPriority } from '@/types';
 import { flattenHierarchical } from '@/lib/wbs';
 import WbsSelect from './WbsSelect';
 import { groupCls, rowCls, labelCls, fieldCls, selectCls, statusCls, priorityCls } from './TaskPeekPanel';
+import { primaryBtn, secondaryBtn, modalOverlay } from '@/lib/styles';
 
 interface TaskModalProps {
   wbsNodes: WbsNode[];
@@ -60,9 +61,9 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={onClose}>
+    <div className={modalOverlay} onClick={onClose}>
       <form
-        className="w-[calc(100%-32px)] max-w-[460px] bg-canvas rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-hairline p-md flex flex-col gap-sm"
+        className="w-[calc(100%-32px)] max-w-[460px] bg-canvas rounded-lg shadow-card p-md flex flex-col gap-sm"
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
       >
@@ -143,8 +144,8 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
         </div>
 
         <div className="flex justify-end gap-xs">
-          <button type="button" className="h-8 px-md border border-hairline rounded-md bg-canvas text-body-xs font-semibold cursor-pointer" onClick={onClose}>취소</button>
-          <button type="submit" className="h-8 px-md border-none rounded-md bg-primary text-on-primary text-body-xs font-semibold cursor-pointer">추가</button>
+          <button type="button" className={secondaryBtn} onClick={onClose}>취소</button>
+          <button type="submit" className={primaryBtn}>추가</button>
         </div>
       </form>
     </div>

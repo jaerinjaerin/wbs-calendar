@@ -4,12 +4,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { hashPin } from '@/lib/auth';
+import { inputCls, primaryBtn, secondaryBtn, modalOverlay, modalCard } from '@/lib/styles';
 import type { Project } from '@/types';
+
+// ponytail: module-level cache survives client-side navigation; stale list shows instantly, then revalidates on mount
+let cachedProjects: Project[] | null = null;
 
 export default function ProjectListPage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [projects, setProjects] = useState<Project[]>(cachedProjects ?? []);
+  const [loaded, setLoaded] = useState(cachedProjects !== null);
   const [showForm, setShowForm] = useState(false);
 
   const [setupProject, setSetupProject] = useState('');
@@ -24,7 +28,10 @@ export default function ProjectListPage() {
 
   async function loadProjects() {
     const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-    if (data) setProjects(data);
+    if (data) {
+      cachedProjects = data;
+      setProjects(data);
+    }
     setLoaded(true);
   }
 
@@ -59,7 +66,7 @@ export default function ProjectListPage() {
 
     if (uErr || !user) {
       console.error(uErr);
-      setSetupError('PM 정보를 저장하지 못했습니다. 다시 시도해 주세요');
+      setSetupError('관리자 정보를 저장하지 못했습니다. 다시 시도해 주세요');
       setSetupLoading(false);
       return;
     }
@@ -70,7 +77,23 @@ export default function ProjectListPage() {
 
   if (!loaded) return null;
 
-  const inputCls = 'h-10 px-3.5 border border-hairline rounded-md bg-canvas text-body-md text-ink font-sans outline-none placeholder:text-muted-soft focus:border-ink';
+  const setupForm = (
+    <form className="flex flex-col gap-sm w-full max-w-[320px]" onSubmit={handleSetup}>
+      <h2 className="text-title-sm text-ink text-center mb-xxs">새 프로젝트 만들기</h2>
+      <input className={inputCls} placeholder="프로젝트 이름" value={setupProject} onChange={(e) => setSetupProject(e.target.value)} autoFocus />
+      <input className={inputCls} placeholder="관리자 이름" value={setupName} onChange={(e) => setSetupName(e.target.value)} />
+      <input className={inputCls} placeholder="관리자 비밀번호 (설정 접근용)" type="password" value={setupPassword} onChange={(e) => setSetupPassword(e.target.value)} />
+      {setupError && <p className="text-error text-caption text-center">{setupError}</p>}
+      <button className={`${primaryBtn} mt-xxs`} type="submit" disabled={setupLoading}>
+        {setupLoading ? '생성 중…' : '만들기'}
+      </button>
+      {projects.length > 0 && (
+        <button type="button" className={secondaryBtn} onClick={() => setShowForm(false)}>
+          취소
+        </button>
+      )}
+    </form>
+  );
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-lg">
@@ -85,7 +108,7 @@ export default function ProjectListPage() {
               className="flex flex-col items-center gap-xs py-lg px-md bg-canvas border-2 border-hairline rounded-lg cursor-pointer transition-colors hover:border-primary"
               onClick={() => router.push(`/${encodeURIComponent(p.name)}`)}
             >
-              <div className="w-12 h-12 rounded-full bg-surface-soft text-primary flex items-center justify-center text-lg font-semibold">
+              <div className="w-12 h-12 rounded-full bg-surface-soft text-primary flex items-center justify-center text-title-md">
                 {p.name.charAt(0)}
               </div>
               <span className="text-body-sm font-medium">{p.name}</span>
@@ -94,28 +117,20 @@ export default function ProjectListPage() {
         </div>
       )}
 
-      {(showForm || projects.length === 0) && (
-        <form className="flex flex-col gap-sm w-full max-w-[320px]" onSubmit={handleSetup}>
-          <p className="text-body-sm font-semibold text-ink text-center mb-xxs">새 프로젝트 만들기</p>
-          <input className={inputCls} placeholder="프로젝트 이름" value={setupProject} onChange={(e) => setSetupProject(e.target.value)} autoFocus />
-          <input className={inputCls} placeholder="PM 이름" value={setupName} onChange={(e) => setSetupName(e.target.value)} />
-          <input className={inputCls} placeholder="관리자 비밀번호 (설정 접근용)" type="password" value={setupPassword} onChange={(e) => setSetupPassword(e.target.value)} />
-          {setupError && <p className="text-error text-caption text-center">{setupError}</p>}
-          <button className="py-2.5 border-none rounded-md bg-primary text-on-primary text-body-sm font-medium cursor-pointer mt-xxs disabled:opacity-60 disabled:cursor-not-allowed" type="submit" disabled={setupLoading}>
-            {setupLoading ? '생성 중…' : '만들기'}
-          </button>
-          {projects.length > 0 && (
-            <button type="button" className="py-2.5 border border-hairline rounded-md bg-canvas text-body-sm cursor-pointer text-muted" onClick={() => setShowForm(false)}>
-              취소
-            </button>
-          )}
-        </form>
-      )}
+      {projects.length === 0 && setupForm}
 
-      {!showForm && projects.length > 0 && (
+      {projects.length > 0 && (
         <button className="mt-lg py-2.5 px-lg border-2 border-dashed border-hairline rounded-lg bg-transparent text-muted text-body-sm cursor-pointer transition-colors hover:border-primary hover:text-primary" onClick={() => setShowForm(true)}>
           + 새 프로젝트
         </button>
+      )}
+
+      {showForm && projects.length > 0 && (
+        <div className={modalOverlay} onClick={() => setShowForm(false)}>
+          <div role="dialog" aria-modal="true" className={modalCard} onClick={(e) => e.stopPropagation()}>
+            {setupForm}
+          </div>
+        </div>
       )}
     </div>
   );

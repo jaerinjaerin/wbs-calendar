@@ -46,7 +46,7 @@ export default function ExportButtons({ tasks, wbsNodes, projectName }: ExportBu
   return (
     <>
       <button
-        className="px-2.5 md:px-3.5 py-1.5 rounded-md text-micro md:text-xs font-medium border border-white/10 bg-white/[0.08] text-on-dark cursor-pointer disabled:opacity-40 disabled:cursor-default"
+        className="px-2.5 md:px-3.5 py-1.5 rounded-md text-micro md:text-body-xs font-medium border-none bg-surface-dark-elevated hover:bg-primary-active text-on-dark cursor-pointer disabled:opacity-40 disabled:cursor-default"
         disabled={empty || busy}
         title={empty ? '내보낼 작업이 없습니다' : undefined}
         onClick={handleExport}
