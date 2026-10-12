@@ -325,6 +325,9 @@ The footer flips to `{colors.surface-dark}` (#101010) — a deep near-black that
 ## Typography
 
 ### Font Family
+
+> **WBS 캘린더 적용 규칙:** Cal Sans는 공개 웹폰트가 아니고 한글 글리프도 없어서 쓰지 않습니다. 디스플레이 텍스트(`font-display`)도 **Inter 600 + 음수 자간**으로 렌더링합니다(아래 "If Cal Sans is unavailable" 대체안). 이 문서의 Cal Sans 언급은 원본(Cal.com) 기준 설명입니다.
+
 The system runs **Cal Sans** for display + brand wordmark and **Inter** for everything else. Cal Sans is Cal.com's custom geometric display typeface — slightly condensed, weight 600, negative letter-spacing. Inter handles body, buttons, navigation, captions, and tabular code blocks. The fallback stack walks `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` for both families.
 
 The split is functional:

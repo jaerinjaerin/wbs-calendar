@@ -133,7 +133,7 @@ export default function ProjectCalendarPage() {
     <div className="flex flex-col h-screen overflow-hidden">
       <header className="flex items-center justify-between px-3 h-12 md:px-5 md:h-14 bg-surface-dark shrink-0">
         <div className="flex items-center gap-xs md:gap-sm">
-          <button className="bg-transparent border-none text-on-dark text-base cursor-pointer px-xs py-xxs rounded-md hover:bg-white/[0.08]" onClick={() => router.push('/')}>←</button>
+          <button className="bg-transparent border-none text-on-dark text-base cursor-pointer px-xs py-xxs rounded-md hover:bg-white/[0.08]" onClick={() => router.push('/')} aria-label="프로젝트 목록">←</button>
           <span className="font-display text-[13px] md:text-[15px] font-medium text-on-dark">WBS 캘린더</span>
           <span className="text-on-dark-soft text-caption font-medium max-w-[100px] md:max-w-none truncate max-[480px]:hidden">{projectName}</span>
         </div>

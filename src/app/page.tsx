@@ -70,7 +70,7 @@ export default function ProjectListPage() {
 
   if (!loaded) return null;
 
-  const inputCls = 'py-2.5 px-3 border-2 border-hairline rounded-md text-body-sm font-sans outline-none focus:border-primary';
+  const inputCls = 'h-10 px-3.5 border border-hairline rounded-md bg-canvas text-body-md text-ink font-sans outline-none placeholder:text-muted-soft focus:border-ink';
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-lg">

@@ -34,7 +34,7 @@ module.exports = {
         'badge-emerald': '#34d399',
       },
       fontFamily: {
-        display: ['Cal Sans', 'Inter', 'sans-serif'],
+        display: ['Inter', 'sans-serif'], // Cal Sans isn't a public web font and has no Hangul — see DESIGN.md
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },

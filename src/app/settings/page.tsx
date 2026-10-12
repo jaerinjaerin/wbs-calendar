@@ -26,6 +26,7 @@ function SettingsInner() {
   const [projectName, setProjectName] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const { showToast, hideToast, toastNode } = useToast();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const composing = useRef(false);
   const submitAfterCompose = useRef(false);
@@ -121,8 +122,13 @@ function SettingsInner() {
 
   async function handleDeleteProject() {
     if (!project) return;
-    if (!confirm(`"${project.name}" 프로젝트를 삭제하시겠습니까?\n모든 데이터가 삭제됩니다.`)) return;
-    await supabase.from('projects').delete().eq('id', project.id);
+    const { error } = await supabase.from('projects').delete().eq('id', project.id);
+    if (error) {
+      console.error(error);
+      setConfirmingDelete(false);
+      showToast({ message: '프로젝트 삭제에 실패했습니다' });
+      return;
+    }
     router.replace('/');
   }
 
@@ -217,10 +223,22 @@ function SettingsInner() {
           <h2 className="text-title-sm text-ink">프로젝트 삭제</h2>
           <p className="text-body-sm text-muted mt-xxs">모든 분류·작업·팀원 데이터가 함께 삭제되며 되돌릴 수 없습니다</p>
         </div>
-        <button className="h-10 px-4 rounded-md border border-error/40 bg-canvas text-error text-body-sm font-semibold cursor-pointer whitespace-nowrap hover:bg-error/5" onClick={handleDeleteProject}>
+        <button className="h-10 px-4 rounded-md border border-error/40 bg-canvas text-error text-body-sm font-semibold cursor-pointer whitespace-nowrap hover:bg-error/5" onClick={() => setConfirmingDelete(true)}>
           프로젝트 삭제
         </button>
       </section>
+      {confirmingDelete && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={() => setConfirmingDelete(false)}>
+          <div role="alertdialog" aria-modal="true" className="bg-canvas rounded-lg p-lg flex flex-col gap-sm w-[320px] shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <span className="text-title-sm text-ink">&quot;{project.name}&quot; 삭제</span>
+            <p className="text-body-sm text-muted m-0">모든 분류·작업·팀원 데이터가 함께 삭제되며 되돌릴 수 없습니다.</p>
+            <div className="flex gap-xs justify-end mt-xs">
+              <button className={secondaryBtn} onClick={() => setConfirmingDelete(false)} autoFocus>취소</button>
+              <button className="h-10 px-4 rounded-md border-none bg-error text-on-primary text-body-sm font-semibold cursor-pointer" onClick={handleDeleteProject}>삭제</button>
+            </div>
+          </div>
+        </div>
+      )}
       {toastNode}
     </div>
   );
