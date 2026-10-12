@@ -23,7 +23,8 @@ const unauthorized = () => fail('unauthorized', 'Wrong admin password');
 async function adminOk(projectId: unknown, password: unknown): Promise<boolean> {
   const pw = cleanPassword(password);
   if (!isUuid(projectId) || !pw) return false;
-  const { data } = await db.from('projects').select('admin_password_hash').eq('id', projectId).maybeSingle();
+  const { data, error } = await db.from('projects').select('admin_password_hash').eq('id', projectId).maybeSingle();
+  if (error) console.error('adminOk query failed', error);
   return !!data?.admin_password_hash && (await passwordMatches(pw, data.admin_password_hash));
 }
 

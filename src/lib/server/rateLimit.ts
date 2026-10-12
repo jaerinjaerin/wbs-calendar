@@ -14,7 +14,15 @@ export type HitRpc = (args: { p_key: string; p_window_seconds: number; p_max: nu
 
 // Vercel overwrites x-forwarded-for, so the first entry is the real client
 export function clientIp(forwardedFor: string | null): string {
-  return forwardedFor?.split(',')[0]?.trim() || 'unknown';
+  const ip = forwardedFor?.split(',')[0]?.trim();
+  if (!ip) return 'unknown';
+  if (!ip.includes(':')) return ip;
+  // an IPv6 client owns a whole /64, so key by the prefix or it could rotate addresses past every limit
+  const [head, tail = ''] = ip.split('::');
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const hextets = ip.includes('::') ? [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill('0'), ...right] : left;
+  return `${hextets.slice(0, 4).map((h) => parseInt(h, 16).toString(16)).join(':')}::/64`;
 }
 
 // ponytail: fixed window, so up to 2x max can pass across a window boundary; use a sliding window if that ever matters

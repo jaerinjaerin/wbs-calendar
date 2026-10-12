@@ -43,7 +43,7 @@
 | `create` | 60초 | 60 | `createTask`, `createWbsNode`, `addMember` |
 | `read` | 60초 | 900 | 조회 액션 전부 |
 | `write` | 60초 | 300 | 수정·삭제 액션 전부 |
-| `auth` | 60초 | 10 | `verifyAdmin` |
+| `auth` | 60초 | 10 | `verifyAdmin`, 그리고 관리자 액션(`addMember`, `deleteMember`, `renameProject`, `deleteProject`)도 자기 종류 한도에 더해 이 한도를 쓴다 |
 
 숫자는 `src/lib/server/rateLimit.ts`의 상수 한 곳에 모은다.
 
@@ -112,7 +112,7 @@
 ### 3.3 관리자 인증
 
 - `verifyAdmin`은 서버에서 `hashPin(password)`와 저장된 해시를 `crypto.timingSafeEqual`로 비교한다.
-- 관리자 액션은 매번 비밀번호를 받아 같은 방식으로 다시 검증한다. 재검증은 해당 액션의 한도(`create`/`write`)만 따르고 `auth` 한도는 쓰지 않는다.
+- 관리자 액션은 매번 비밀번호를 받아 같은 방식으로 다시 검증한다. 관리자 액션은 자기 종류의 한도와 `auth` 한도를 둘 다 쓴다. 그래서 관리자 액션을 더 빠른 비밀번호 추측 수단으로 쓸 수 없고, 아래 SHA-256 결정의 전제(분당 10회)가 유지된다.
 - 설정 페이지는 인증 성공 후 비밀번호를 React state(메모리)에만 둔다. 새로고침하면 다시 입력한다(지금과 같음).
 - SHA-256(솔트 없음)은 유지한다. 해시가 서버 밖으로 나가지 않고 시도가 IP당 분당 10회로 묶이므로, 기존 해시 이전 작업을 감수할 이유가 약하다.
 
@@ -161,6 +161,7 @@ grant execute on function hit_rate_limit(text, int, int) to service_role;
 ```
 
 - 키는 `${kind}:${ip}`. 예: `create:203.0.113.7`.
+- IPv6 주소는 /64 접두사로 키를 만든다(예: `2001:db8:abcd:12::/64`). 한 사용자가 /64 전체를 쓸 수 있어 주소별로 세면 한도를 우회할 수 있기 때문이다.
 - `clientIp`는 `x-forwarded-for`의 첫 값을 앞뒤 공백을 제거해 쓴다. 헤더가 없으면 `'unknown'`. Vercel은 이 헤더를 덮어쓰므로 사용자가 조작할 수 없다.
 - `limited(kind)`(`actions.ts` 내부)는 RPC가 `false`를 돌려주면 `rate_limited` 오류를 반환한다. RPC 자체가 실패하면 `console.error`만 남기고 통과시킨다.
 - 고정 구간이라 구간 경계에서 최대 2배까지 통과할 수 있다. 남용 방지 목적에는 충분하다고 보고, `rateLimit.ts`에 `ponytail:` 주석으로 남긴다.

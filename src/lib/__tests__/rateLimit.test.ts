@@ -11,6 +11,19 @@ describe('clientIp', () => {
     expect(clientIp('')).toBe('unknown');
     expect(clientIp(' , 10.0.0.1')).toBe('unknown');
   });
+  it('reduces a full IPv6 address to its /64', () => {
+    expect(clientIp('2001:db8:abcd:12:1:2:3:4')).toBe('2001:db8:abcd:12::/64');
+  });
+  it('expands :: before taking the /64', () => {
+    expect(clientIp('2001:db8::1')).toBe('2001:db8:0:0::/64');
+    expect(clientIp('::1')).toBe('0:0:0:0::/64');
+  });
+  it('gives addresses in the same /64 the same key', () => {
+    expect(clientIp('2001:db8:abcd:12::1')).toBe(clientIp('2001:db8:abcd:12:ffff:eeee:dddd:cccc'));
+  });
+  it('lowercases IPv6 and strips leading zeros', () => {
+    expect(clientIp('2001:DB8:ABCD:0012::1')).toBe('2001:db8:abcd:12::/64');
+  });
 });
 
 describe('isAllowed', () => {
