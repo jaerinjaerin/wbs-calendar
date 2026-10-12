@@ -87,6 +87,7 @@ export default function ProjectCalendarPage() {
     const { error } = await supabase.from('tasks').insert(task);
     // 23505 = unique violation: an earlier attempt already landed, so treat as success
     if (error && error.code !== '23505') {
+      console.error(error);
       setTasks((prev) => prev.filter((t) => t.id !== task.id));
       showToast({ message: '작업 추가에 실패했습니다', onRetry: () => { hideToast(); insertTask(task); } });
       return;
@@ -105,6 +106,7 @@ export default function ProjectCalendarPage() {
     setTasks((prev) => prev.filter((t) => t.id !== task.id));
     const { error } = await supabase.from('tasks').delete().eq('id', task.id);
     if (error) {
+      console.error(error);
       setTasks((prev) => [...prev, task]);
       showToast({ message: '작업 삭제에 실패했습니다', onRetry: () => { hideToast(); handleDeleteTask(task); } });
       return;
@@ -132,7 +134,7 @@ export default function ProjectCalendarPage() {
       <header className="flex items-center justify-between px-3 h-12 md:px-5 md:h-14 bg-surface-dark shrink-0">
         <div className="flex items-center gap-xs md:gap-sm">
           <button className="bg-transparent border-none text-on-dark text-base cursor-pointer px-xs py-xxs rounded-md hover:bg-white/[0.08]" onClick={() => router.push('/')}>←</button>
-          <span className="font-display text-[13px] md:text-[15px] font-medium text-on-dark">WBS·Cal</span>
+          <span className="font-display text-[13px] md:text-[15px] font-medium text-on-dark">WBS 캘린더</span>
           <span className="text-on-dark-soft text-caption font-medium max-w-[100px] md:max-w-none truncate max-[480px]:hidden">{projectName}</span>
         </div>
         <div className="flex items-center gap-1.5 md:gap-xs">

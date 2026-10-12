@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { buildTree } from '@/lib/wbs';
 import type { WbsTreeNode } from '@/types';
+import { useToast } from '@/components/Toast';
 
 const COLOR_PRESETS = ['#3563e9', '#1a9e8f', '#7c5cbf', '#d97520', '#c74060', '#e05297', '#2d8a4e', '#8b6914'];
 
@@ -28,6 +29,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLOR_PRESETS[0]);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const { showToast, toastNode } = useToast();
 
   const loadTree = useCallback(async () => {
     const [{ data: nodes }, { data: counts }] = await Promise.all([
@@ -90,7 +92,10 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
       color,
       depth,
     });
-    if (error) alert(`추가 실패: ${error.message}`);
+    if (error) {
+      console.error(error);
+      showToast({ message: 'WBS 항목 추가에 실패했습니다' });
+    }
     if (parentId) setCollapsed((prev) => { const next = new Set(prev); next.delete(parentId); return next; });
     await loadTree();
     onDataChange?.();
@@ -259,6 +264,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
           </div>
         </div>
       )}
+      {toastNode}
     </aside>
   );
 }

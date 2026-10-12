@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'WBS Calendar',
-  description: '프로젝트 WBS 관리 캘린더',
+  title: 'WBS 캘린더',
+  description: '팀 프로젝트 WBS 캘린더',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

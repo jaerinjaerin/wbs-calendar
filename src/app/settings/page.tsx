@@ -78,6 +78,7 @@ function SettingsInner() {
     const { error } = await supabase.from('users').insert(user);
     // 23505 = unique violation: an earlier attempt already landed, so treat as success
     if (error && error.code !== '23505') {
+      console.error(error);
       setUsers((prev) => prev.filter((u) => u.id !== user.id));
       showToast({ message: '팀원 추가에 실패했습니다', onRetry: () => { hideToast(); insertUser(user); } });
     }
@@ -97,6 +98,7 @@ function SettingsInner() {
     setUsers((prev) => prev.filter((u) => u.id !== user.id));
     const { error } = await supabase.from('users').delete().eq('id', user.id);
     if (error) {
+      console.error(error);
       setUsers((prev) => [...prev, user]);
       showToast({ message: '팀원 삭제에 실패했습니다', onRetry: () => { hideToast(); handleDeleteUser(user); } });
     }
@@ -107,6 +109,7 @@ function SettingsInner() {
     if (!project || !name || name === initialName.current) return;
     const { error } = await supabase.from('projects').update({ name }).eq('id', project.id);
     if (error) {
+      console.error(error);
       showToast({ message: '프로젝트 이름 저장에 실패했습니다' });
       return;
     }

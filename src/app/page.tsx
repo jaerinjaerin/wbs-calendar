@@ -45,7 +45,8 @@ export default function ProjectListPage() {
       .single();
 
     if (pErr || !project) {
-      setSetupError('프로젝트 생성 실패');
+      console.error(pErr);
+      setSetupError('프로젝트를 만들지 못했습니다. 다시 시도해 주세요');
       setSetupLoading(false);
       return;
     }
@@ -57,7 +58,8 @@ export default function ProjectListPage() {
       .single();
 
     if (uErr || !user) {
-      setSetupError('사용자 생성 실패');
+      console.error(uErr);
+      setSetupError('PM 정보를 저장하지 못했습니다. 다시 시도해 주세요');
       setSetupLoading(false);
       return;
     }
@@ -72,7 +74,7 @@ export default function ProjectListPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-lg">
-      <h1 className="font-display text-display-sm text-ink mb-xs">WBS·Cal</h1>
+      <h1 className="font-display text-display-sm text-ink mb-xs">WBS 캘린더</h1>
       <p className="text-muted text-body-sm mb-xl">프로젝트를 선택하세요</p>
 
       {projects.length > 0 && (
