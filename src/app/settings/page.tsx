@@ -215,7 +215,7 @@ function SettingsInner() {
       <section className={`${cardCls} flex flex-col sm:flex-row sm:items-center justify-between gap-md`}>
         <div>
           <h2 className="text-title-sm text-ink">프로젝트 삭제</h2>
-          <p className="text-body-sm text-muted mt-xxs">모든 WBS·작업·팀원 데이터가 함께 삭제되며 되돌릴 수 없습니다</p>
+          <p className="text-body-sm text-muted mt-xxs">모든 분류·작업·팀원 데이터가 함께 삭제되며 되돌릴 수 없습니다</p>
         </div>
         <button className="h-10 px-4 rounded-md border border-error/40 bg-canvas text-error text-body-sm font-semibold cursor-pointer whitespace-nowrap hover:bg-error/5" onClick={handleDeleteProject}>
           프로젝트 삭제

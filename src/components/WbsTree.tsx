@@ -94,7 +94,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
     });
     if (error) {
       console.error(error);
-      showToast({ message: 'WBS 항목 추가에 실패했습니다' });
+      showToast({ message: '분류 추가에 실패했습니다' });
     }
     if (parentId) setCollapsed((prev) => { const next = new Set(prev); next.delete(parentId); return next; });
     await loadTree();
@@ -167,7 +167,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
           <span className="font-mono text-[11px] text-muted-soft bg-surface-card px-1.5 rounded-pill">{node.task_count}</span>
           <button
             className="opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer text-sm text-muted-soft px-0.5"
-            title="하위 항목 추가"
+            title="하위 분류 추가"
             onClick={(e) => { e.stopPropagation(); openAddPopup(node.id, node.depth + 1); }}
             disabled={!!adding}
           >
@@ -189,8 +189,8 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
   return (
     <aside className="w-[280px] bg-canvas border-r border-hairline flex flex-col overflow-hidden shrink-0">
       <div className="p-md flex items-center justify-between border-b border-hairline-soft">
-        <span className="text-xs font-semibold uppercase tracking-[0.8px] text-muted-soft">WBS 구조</span>
-        <button className="w-[22px] h-[22px] rounded-xs border border-hairline bg-transparent cursor-pointer text-sm flex items-center justify-center" onClick={() => openAddPopup(null, 0)} disabled={!!adding}>+</button>
+        <span className="text-xs font-semibold uppercase tracking-[0.8px] text-muted-soft">WBS</span>
+        <button className="w-[22px] h-[22px] rounded-xs border border-hairline bg-transparent cursor-pointer text-sm flex items-center justify-center" onClick={() => openAddPopup(null, 0)} aria-label="분류 추가" title="분류 추가" disabled={!!adding}>+</button>
       </div>
       <div className="flex-1 overflow-y-auto py-xs">
         {tree.map(renderNode)}
@@ -199,7 +199,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={() => setAdding(null)}>
           <div className="bg-canvas rounded-lg p-lg flex flex-col gap-sm w-[320px] shadow-lg" onClick={(e) => e.stopPropagation()}>
             <span className="text-[15px] font-semibold text-ink">
-              {adding.parentId ? '하위 항목 추가' : '카테고리 추가'}
+              {adding.parentId ? '하위 분류 추가' : '분류 추가'}
             </span>
             <input
               ref={nameInputRef}
@@ -245,8 +245,8 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
       {deletingId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]" onClick={() => setDeletingId(null)}>
           <div className="bg-canvas rounded-lg p-lg flex flex-col gap-sm w-[300px] shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <span className="text-[15px] font-semibold text-ink">항목 삭제</span>
-            <p className="text-[13px] text-muted m-0">이 항목과 하위 항목이 모두 삭제됩니다. 계속하시겠습니까?</p>
+            <span className="text-[15px] font-semibold text-ink">분류 삭제</span>
+            <p className="text-[13px] text-muted m-0">이 분류와 하위 분류가 모두 삭제됩니다. 계속하시겠습니까?</p>
             <div className="flex gap-xs justify-end mt-xs">
               <button
                 className="text-[13px] px-md py-[7px] rounded-md border border-hairline bg-transparent cursor-pointer text-muted"

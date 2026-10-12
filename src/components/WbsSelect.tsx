@@ -34,7 +34,7 @@ export default function WbsSelect({ nodes, value, onChange }: { nodes: WbsNode[]
         aria-expanded={open}
       >
         <Badge color={current?.color ?? '#ccc'} />
-        <span className="flex-1 truncate">{current?.name ?? '선택'}</span>
+        <span className="flex-1 truncate">{current?.name ?? '분류 선택'}</span>
         <span className="text-muted-soft text-[10px]">▾</span>
       </button>
       {open && (

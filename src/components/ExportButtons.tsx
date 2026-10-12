@@ -48,7 +48,7 @@ export default function ExportButtons({ tasks, wbsNodes, projectName }: ExportBu
       <button
         className="px-2.5 md:px-3.5 py-1.5 rounded-md text-[11px] md:text-xs font-medium border border-white/10 bg-white/[0.08] text-on-dark cursor-pointer disabled:opacity-40 disabled:cursor-default"
         disabled={empty || busy}
-        title={empty ? '내보낼 일정이 없습니다' : undefined}
+        title={empty ? '내보낼 작업이 없습니다' : undefined}
         onClick={handleExport}
       >
         {busy ? '내보내는 중…' : 'Excel'}
