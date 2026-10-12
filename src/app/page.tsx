@@ -97,12 +97,12 @@ export default function ProjectListPage() {
       {(showForm || projects.length === 0) && (
         <form className="flex flex-col gap-sm w-full max-w-[320px]" onSubmit={handleSetup}>
           <p className="text-body-sm font-semibold text-ink text-center mb-xxs">새 프로젝트 만들기</p>
-          <input className={inputCls} placeholder="프로젝트명" value={setupProject} onChange={(e) => setSetupProject(e.target.value)} autoFocus />
+          <input className={inputCls} placeholder="프로젝트 이름" value={setupProject} onChange={(e) => setSetupProject(e.target.value)} autoFocus />
           <input className={inputCls} placeholder="PM 이름" value={setupName} onChange={(e) => setSetupName(e.target.value)} />
           <input className={inputCls} placeholder="관리자 비밀번호 (설정 접근용)" type="password" value={setupPassword} onChange={(e) => setSetupPassword(e.target.value)} />
           {setupError && <p className="text-error text-caption text-center">{setupError}</p>}
           <button className="py-2.5 border-none rounded-md bg-primary text-on-primary text-body-sm font-medium cursor-pointer mt-xxs disabled:opacity-60 disabled:cursor-not-allowed" type="submit" disabled={setupLoading}>
-            {setupLoading ? '생성 중...' : '만들기'}
+            {setupLoading ? '생성 중…' : '만들기'}
           </button>
           {projects.length > 0 && (
             <button type="button" className="py-2.5 border border-hairline rounded-md bg-canvas text-body-sm cursor-pointer text-muted" onClick={() => setShowForm(false)}>

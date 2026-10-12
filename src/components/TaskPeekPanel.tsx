@@ -152,7 +152,7 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
           <span className={labelCls}>상태</span>
           <select className={`${selectCls} font-medium ${statusCls[task.status]}`} value={task.status} onChange={(e) => onUpdate({ status: e.target.value as TaskStatus })}>
             <option value="todo">예정</option>
-            <option value="in_progress">진행중</option>
+            <option value="in_progress">진행 중</option>
             <option value="done">완료</option>
           </select>
         </div>

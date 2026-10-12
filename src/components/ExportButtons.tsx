@@ -51,7 +51,7 @@ export default function ExportButtons({ tasks, wbsNodes, projectName }: ExportBu
         title={empty ? '내보낼 작업이 없습니다' : undefined}
         onClick={handleExport}
       >
-        {busy ? '내보내는 중…' : 'Excel'}
+        {busy ? '내보내는 중…' : '엑셀'}
       </button>
       {toastNode}
     </>
