@@ -2,21 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { hashPin } from '@/lib/auth';
 import { primaryBtn, secondaryBtn, modalOverlay } from '@/lib/styles';
 import { groupCls, rowCls, labelCls, fieldCls } from '@/components/TaskPeekPanel';
-import type { Project } from '@/types';
+import { listProjects, createProject } from './actions';
+import { errorMessage } from '@/lib/actionResult';
+import type { ProjectSummary } from '@/types';
 
 // ponytail: module-level cache survives client-side navigation; stale list shows instantly, then revalidates on mount
-let cachedProjects: Project[] | null = null;
+let cachedProjects: ProjectSummary[] | null = null;
 
 const rowInputCls = `${fieldCls} flex-1 min-w-0 text-body-xs text-ink py-xxs px-xxs placeholder:text-muted-soft`;
 
 export default function ProjectListPage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>(cachedProjects ?? []);
+  const [projects, setProjects] = useState<ProjectSummary[]>(cachedProjects ?? []);
   const [loaded, setLoaded] = useState(cachedProjects !== null);
+  // without this, a failed load would look like "no projects yet" and show the setup form
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   const [setupProject, setSetupProject] = useState('');
@@ -37,10 +39,14 @@ export default function ProjectListPage() {
   }, [showForm]);
 
   async function loadProjects() {
-    const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+    const { data, error } = await listProjects();
     if (data) {
       cachedProjects = data;
       setProjects(data);
+      setLoadError(null);
+    } else {
+      console.error(error);
+      setLoadError(errorMessage(error, '프로젝트 목록을 불러오지 못했습니다. 새로고침해 주세요'));
     }
     setLoaded(true);
   }
@@ -54,38 +60,25 @@ export default function ProjectListPage() {
     setSetupLoading(true);
     setSetupError(null);
 
-    const adminHash = await hashPin(setupPassword);
-    const { data: project, error: pErr } = await supabase
-      .from('projects')
-      .insert({ name: setupProject.trim(), admin_password_hash: adminHash })
-      .select()
-      .single();
-
-    if (pErr || !project) {
-      console.error(pErr);
-      setSetupError('프로젝트를 만들지 못했습니다. 다시 시도해 주세요');
+    const { data, error } = await createProject(setupProject, setupName, setupPassword);
+    if (!data) {
+      console.error(error);
+      setSetupError(errorMessage(error, '프로젝트를 만들지 못했습니다. 다시 시도해 주세요'));
       setSetupLoading(false);
       return;
     }
-
-    const { data: user, error: uErr } = await supabase
-      .from('users')
-      .insert({ name: setupName.trim(), pin_hash: null, role: 'pm', project_id: project.id })
-      .select()
-      .single();
-
-    if (uErr || !user) {
-      console.error(uErr);
-      setSetupError('관리자 정보를 저장하지 못했습니다. 다시 시도해 주세요');
-      setSetupLoading(false);
-      return;
-    }
-
-    await supabase.from('projects').update({ owner_id: user.id }).eq('id', project.id);
-    router.push(`/${encodeURIComponent(project.name)}`);
+    router.push(`/${encodeURIComponent(data.name)}`);
   }
 
   if (!loaded) return null;
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-lg">
+        <p className="text-body-sm text-muted text-center">{loadError}</p>
+      </div>
+    );
+  }
 
   const setupForm = (
     <form
