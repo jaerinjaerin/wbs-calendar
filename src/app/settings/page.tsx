@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { verifyPin } from '@/lib/auth';
+import { getProject, verifyAdmin, addMember, deleteMember, renameProject, deleteProject } from '@/app/actions';
+import { errorMessage } from '@/lib/actionResult';
 import { useToast } from '@/components/Toast';
 import { inputCls, primaryBtn, secondaryBtn, dangerBtn, modalOverlay, modalCard } from '@/lib/styles';
-import type { User, Project } from '@/types';
+import type { User, ProjectSummary } from '@/types';
 
 const cardCls = 'bg-canvas border border-hairline rounded-lg p-lg mb-md';
 
@@ -15,7 +15,7 @@ function SettingsInner() {
   const searchParams = useSearchParams();
   const projectIdParam = searchParams.get('project');
 
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] = useState<ProjectSummary | null>(null);
   const [verified, setVerified] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -33,53 +33,45 @@ function SettingsInner() {
 
   useEffect(() => {
     if (!projectIdParam) { router.replace('/'); return; }
-    supabase
-      .from('projects')
-      .select('*')
-      .eq('id', projectIdParam)
-      .single()
-      .then(({ data }) => {
-        if (!data) { router.replace('/'); return; }
-        setProject(data);
-      });
+    getProject(projectIdParam).then(({ data, error }) => {
+      if (error) {
+        console.error(error);
+        showToast({ message: errorMessage(error, '프로젝트를 불러오지 못했습니다') });
+        return;
+      }
+      if (!data) { router.replace('/'); return; }
+      setProject(data);
+    });
   }, [projectIdParam, router]);
 
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault();
-    if (!project?.admin_password_hash) return;
-    const valid = await verifyPin(password, project.admin_password_hash);
-    if (valid) {
-      // load before showing the list, or a late response would wipe optimistic adds
-      await loadData(project.id);
-      setVerified(true);
-      setAuthError(null);
-    } else {
-      setAuthError('비밀번호가 올바르지 않습니다');
+    if (!project) return;
+    const { data, error } = await verifyAdmin(project.id, password);
+    if (!data) {
+      setAuthError(error?.code === 'unauthorized'
+        ? '비밀번호가 올바르지 않습니다'
+        : errorMessage(error, '인증하지 못했습니다. 다시 시도해 주세요'));
+      return;
     }
-  }
-
-  async function loadData(projectId: string) {
-    const [{ data: u }, { data: p }] = await Promise.all([
-      supabase.from('users').select('*').eq('project_id', projectId),
-      supabase.from('projects').select('*').eq('id', projectId).single(),
-    ]);
-    if (u) setUsers(u);
-    if (p) {
-      setProject(p);
-      setProjectName(p.name);
-      initialName.current = p.name;
-    }
+    // password stays in memory only: admin actions send it so the server can re-check
+    setUsers(data.users);
+    setProject(data.project);
+    setProjectName(data.project.name);
+    initialName.current = data.project.name;
+    setVerified(true);
+    setAuthError(null);
   }
 
   // optimistic like insertTask on the calendar page: client-side id makes retries idempotent (PK conflict)
   async function insertUser(user: User) {
     setUsers((prev) => [...prev, user]);
-    const { error } = await supabase.from('users').insert(user);
+    const { error } = await addMember(user.project_id, password, { id: user.id, name: user.name });
     // 23505 = unique violation: an earlier attempt already landed, so treat as success
     if (error && error.code !== '23505') {
       console.error(error);
       setUsers((prev) => prev.filter((u) => u.id !== user.id));
-      showToast({ message: '팀원 추가에 실패했습니다', onRetry: () => { hideToast(); insertUser(user); } });
+      showToast({ message: errorMessage(error, '팀원 추가에 실패했습니다'), onRetry: () => { hideToast(); insertUser(user); } });
     }
   }
 
@@ -95,21 +87,21 @@ function SettingsInner() {
   // optimistic; delete by id is idempotent so retry is safe
   async function handleDeleteUser(user: User) {
     setUsers((prev) => prev.filter((u) => u.id !== user.id));
-    const { error } = await supabase.from('users').delete().eq('id', user.id);
+    const { error } = await deleteMember(user.project_id, password, user.id);
     if (error) {
       console.error(error);
       setUsers((prev) => [...prev, user]);
-      showToast({ message: '팀원 삭제에 실패했습니다', onRetry: () => { hideToast(); handleDeleteUser(user); } });
+      showToast({ message: errorMessage(error, '팀원 삭제에 실패했습니다'), onRetry: () => { hideToast(); handleDeleteUser(user); } });
     }
   }
 
   async function handleSave() {
     const name = projectName.trim();
     if (!project || !name || name === initialName.current) return;
-    const { error } = await supabase.from('projects').update({ name }).eq('id', project.id);
+    const { error } = await renameProject(project.id, password, name);
     if (error) {
       console.error(error);
-      showToast({ message: '프로젝트 이름 저장에 실패했습니다' });
+      showToast({ message: errorMessage(error, '프로젝트 이름 저장에 실패했습니다') });
       return;
     }
     // no refetch: reloading users here would wipe in-flight optimistic member changes
@@ -120,11 +112,11 @@ function SettingsInner() {
 
   async function handleDeleteProject() {
     if (!project) return;
-    const { error } = await supabase.from('projects').delete().eq('id', project.id);
+    const { error } = await deleteProject(project.id, password);
     if (error) {
       console.error(error);
       setConfirmingDelete(false);
-      showToast({ message: '프로젝트 삭제에 실패했습니다' });
+      showToast({ message: errorMessage(error, '프로젝트 삭제에 실패했습니다') });
       return;
     }
     router.replace('/');
