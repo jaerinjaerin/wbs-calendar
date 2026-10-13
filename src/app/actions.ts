@@ -33,9 +33,9 @@ const USER_COLUMNS = 'id, name, role, project_id';
 const toUsers = (rows: Omit<User, 'pin_hash'>[]): User[] => rows.map((r) => ({ ...r, pin_hash: null }));
 
 // ponytail: in.(...) puts every category id in the URL; switch to an inner-join filter if a project ever has hundreds of categories
-async function tasksOf(nodeIds: string[], columns = '*') {
+async function tasksOf(nodeIds: string[]) {
   if (nodeIds.length === 0) return { data: [], error: null };
-  return db.from('tasks').select(columns).in('wbs_node_id', nodeIds);
+  return db.from('tasks').select('*').in('wbs_node_id', nodeIds);
 }
 
 // ---- projects ----
@@ -112,18 +112,6 @@ export async function deleteTask(id: string): Promise<ActionResult<null>> {
 }
 
 // ---- categories ----
-
-export async function loadWbsTree(projectId: string): Promise<ActionResult<{ nodes: WbsNode[]; counts: Record<string, number> }>> {
-  if (await limited('read')) return rateLimited();
-  if (!isUuid(projectId)) return invalid();
-  const n = await db.from('wbs_nodes').select('*').eq('project_id', projectId).order('sort_order');
-  if (n.error) return fail(n.error.code, n.error.message);
-  const t = await tasksOf(n.data.map((node) => node.id), 'wbs_node_id');
-  if (t.error) return fail(t.error.code, t.error.message);
-  const counts: Record<string, number> = {};
-  (t.data as { wbs_node_id: string }[]).forEach(({ wbs_node_id }) => { counts[wbs_node_id] = (counts[wbs_node_id] ?? 0) + 1; });
-  return ok({ nodes: n.data, counts });
-}
 
 export async function createWbsNode(node: Omit<WbsNode, 'id'>): Promise<ActionResult<null>> {
   if (await limited('create')) return rateLimited();

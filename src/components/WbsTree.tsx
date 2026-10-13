@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { loadWbsTree, createWbsNode, renameWbsNode, deleteWbsNode } from '@/app/actions';
+import { useState, useMemo, useRef } from 'react';
+import { createWbsNode, renameWbsNode, deleteWbsNode } from '@/app/actions';
 import { errorMessage } from '@/lib/actionResult';
 import { buildTree } from '@/lib/wbs';
-import type { WbsTreeNode } from '@/types';
+import type { WbsTreeNode, WbsNode, Task } from '@/types';
 import { useToast } from '@/components/Toast';
 import { inputCls, primaryBtn, secondaryBtn, dangerBtn, modalOverlay, modalCard } from '@/lib/styles';
 import { COLOR_PRESETS } from '@/lib/color';
@@ -16,13 +16,20 @@ interface AddingState {
 
 interface WbsTreeProps {
   projectId: string;
+  wbsNodes: WbsNode[];
+  tasks: Task[];
   hiddenIds: Set<string>;
   onToggleNode: (id: string) => void;
-  onDataChange?: () => void;
+  onDataChange: () => Promise<void>;
 }
 
-export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChange }: WbsTreeProps) {
-  const [tree, setTree] = useState<WbsTreeNode[]>([]);
+// Renders the parent's data; after an edit the parent's reload refreshes it.
+export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggleNode, onDataChange }: WbsTreeProps) {
+  const tree = useMemo(() => {
+    const counts: Record<string, number> = {};
+    tasks.forEach(({ wbs_node_id }) => { counts[wbs_node_id] = (counts[wbs_node_id] ?? 0) + 1; });
+    return buildTree(wbsNodes, counts);
+  }, [wbsNodes, tasks]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -31,18 +38,6 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
   const [newColor, setNewColor] = useState(COLOR_PRESETS[0]);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const { showToast, toastNode } = useToast();
-
-  const loadTree = useCallback(async () => {
-    const { data, error } = await loadWbsTree(projectId);
-    if (!data) {
-      console.error(error);
-      showToast({ message: errorMessage(error, '분류를 불러오지 못했습니다') });
-      return;
-    }
-    setTree(buildTree(data.nodes, data.counts));
-  }, [projectId]);
-
-  useEffect(() => { loadTree(); }, [loadTree]);
 
   function toggleCollapse(id: string) {
     setCollapsed((prev) => {
@@ -96,8 +91,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
       showToast({ message: errorMessage(error, '분류 추가에 실패했습니다') });
     }
     if (parentId) setCollapsed((prev) => { const next = new Set(prev); next.delete(parentId); return next; });
-    await loadTree();
-    onDataChange?.();
+    await onDataChange();
   }
 
   async function handleRename(id: string) {
@@ -108,8 +102,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
       showToast({ message: errorMessage(error, '분류 이름 변경에 실패했습니다') });
     }
     setEditingId(null);
-    await loadTree();
-    onDataChange?.();
+    await onDataChange();
   }
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -122,8 +115,7 @@ export default function WbsTree({ projectId, hiddenIds, onToggleNode, onDataChan
       showToast({ message: errorMessage(error, '분류 삭제에 실패했습니다') });
     }
     setDeletingId(null);
-    await loadTree();
-    onDataChange?.();
+    await onDataChange();
   }
 
   function renderNode(node: WbsTreeNode) {
