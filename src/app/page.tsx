@@ -30,12 +30,12 @@ export default async function ProjectListPage() {
             <Link
               key={p.id}
               href={`/${encodeURIComponent(p.name)}`}
-              className="flex flex-col items-center gap-xs py-lg px-md bg-canvas border-2 border-hairline rounded-lg cursor-pointer transition-colors hover:border-primary"
+              className="flex flex-col items-center gap-xs py-lg px-md bg-canvas border border-hairline rounded-lg"
             >
-              <div className="w-12 h-12 rounded-full bg-surface-soft text-primary flex items-center justify-center text-title-md">
+              <div className="w-9 h-9 rounded-full bg-surface-card text-ink flex items-center justify-center text-title-sm">
                 {p.name.charAt(0)}
               </div>
-              <span className="text-body-sm font-medium">{p.name}</span>
+              <span className="text-body-sm font-medium text-ink">{p.name}</span>
             </Link>
           ))}
         </div>

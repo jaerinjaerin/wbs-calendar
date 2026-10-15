@@ -87,7 +87,7 @@ export default function NewProjectForm({ hasProjects }: { hasProjects: boolean }
 
   return (
     <>
-      <button className="mt-lg py-2.5 px-lg border-2 border-dashed border-hairline rounded-lg bg-transparent text-muted text-body-sm cursor-pointer transition-colors hover:border-primary hover:text-primary" onClick={() => setShowForm(true)}>
+      <button className={`${secondaryBtn} mt-lg`} onClick={() => setShowForm(true)}>
         + 새 프로젝트
       </button>
       {showForm && (
