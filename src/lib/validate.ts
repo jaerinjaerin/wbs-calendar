@@ -14,6 +14,10 @@ export function isUuid(v: unknown): v is string {
   return typeof v === 'string' && UUID.test(v);
 }
 
+export function isColor(v: unknown): v is string {
+  return typeof v === 'string' && COLOR.test(v);
+}
+
 export function cleanName(v: unknown): string | null {
   if (typeof v !== 'string') return null;
   const s = v.trim();

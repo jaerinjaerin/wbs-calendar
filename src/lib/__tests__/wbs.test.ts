@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildTree } from '../wbs';
+import { buildTree, subtreeIds } from '../wbs';
 import type { WbsNode } from '@/types';
 
 const nodes: WbsNode[] = [
@@ -40,5 +40,15 @@ describe('buildTree', () => {
 
   it('returns empty array for empty input', () => {
     expect(buildTree([], {})).toEqual([]);
+  });
+});
+
+describe('subtreeIds', () => {
+  it('returns the node and all descendants', () => {
+    expect(subtreeIds(nodes, 'a').sort()).toEqual(['a', 'c', 'd', 'e']);
+  });
+
+  it('returns just the node when it has no children', () => {
+    expect(subtreeIds(nodes, 'b')).toEqual(['b']);
   });
 });

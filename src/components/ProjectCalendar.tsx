@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { loadProjectData, createTask, updateTask, deleteTask } from '@/app/actions';
+import { loadProjectData, createTask, updateTask, deleteTask, updateWbsNode } from '@/app/actions';
+import { subtreeIds } from '@/lib/wbs';
 import { errorMessage } from '@/lib/actionResult';
 import WbsTree from '@/components/WbsTree';
 import CalendarView from '@/components/CalendarView';
@@ -91,6 +92,24 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
     if (projectId) await loadData(projectId);
   }
 
+  // optimistic; no reload on success since only these node fields changed (keeps the serial action queue free)
+  async function handleUpdateWbsNode(id: string, changes: { name?: string; color?: string }) {
+    const prev = wbsNodes;
+    const colorIds = changes.color ? new Set(subtreeIds(prev, id)) : new Set<string>();
+    setWbsNodes(prev.map((n) => ({
+      ...n,
+      ...(n.id === id && changes.name ? { name: changes.name } : {}),
+      ...(colorIds.has(n.id) ? { color: changes.color! } : {}),
+    })));
+    const { error } = await updateWbsNode(projectId, id, changes);
+    if (error) {
+      console.error(error);
+      setWbsNodes(prev);
+      showToast({ message: errorMessage(error, '분류 수정에 실패했습니다'), onRetry: () => { hideToast(); handleUpdateWbsNode(id, changes); } });
+      await loadData(projectId);
+    }
+  }
+
   function handleSaveTask(input: Omit<Task, 'id'>) {
     setModalOpen(false);
     insertTask({ ...input, id: crypto.randomUUID() });
@@ -141,6 +160,7 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
             hiddenIds={hiddenIds}
             onToggleNode={toggleNode}
             onDataChange={() => loadData(projectId)}
+            onUpdateNode={handleUpdateWbsNode}
           />
         </div>
         <CalendarView

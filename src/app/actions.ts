@@ -5,8 +5,9 @@ import { db } from '@/lib/server/db';
 import { clientIp, isAllowed, type LimitKind } from '@/lib/server/rateLimit';
 import { passwordMatches } from '@/lib/server/password';
 import { hashPin } from '@/lib/auth';
+import { subtreeIds } from '@/lib/wbs';
 import { ok, fail, fromDb, type ActionResult } from '@/lib/actionResult';
-import { isUuid, cleanName, cleanPassword, cleanNewTask, cleanTaskChanges, cleanNewWbsNode } from '@/lib/validate';
+import { isUuid, isColor, cleanName, cleanPassword, cleanNewTask, cleanTaskChanges, cleanNewWbsNode } from '@/lib/validate';
 import type { Task, WbsNode, User, ProjectSummary } from '@/types';
 
 // Every action: rate limit → validate → query. Results mirror supabase-js ({ data, error }).
@@ -120,11 +121,29 @@ export async function createWbsNode(node: Omit<WbsNode, 'id'>): Promise<ActionRe
   return fromDb(await db.from('wbs_nodes').insert(clean));
 }
 
-export async function renameWbsNode(id: string, name: string): Promise<ActionResult<null>> {
+// Color applies to the whole subtree; name only to the node. Pass only the fields that changed.
+export async function updateWbsNode(
+  projectId: string,
+  id: string,
+  changes: { name?: string; color?: string },
+): Promise<ActionResult<null>> {
   if (await limited('write')) return rateLimited();
-  const clean = cleanName(name);
-  if (!isUuid(id) || !clean) return invalid();
-  return fromDb(await db.from('wbs_nodes').update({ name: clean }).eq('id', id));
+  const name = changes.name === undefined ? undefined : cleanName(changes.name);
+  const { color } = changes;
+  if (!isUuid(projectId) || !isUuid(id) || name === null || (color !== undefined && !isColor(color))) return invalid();
+  if (name === undefined && color === undefined) return ok(null);
+
+  const writes = [];
+  if (name) writes.push(db.from('wbs_nodes').update({ name }).eq('id', id));
+  if (color) {
+    // subtree is computed here, never trusted from the client
+    const { data, error } = await db.from('wbs_nodes').select('id, parent_id').eq('project_id', projectId);
+    if (error) return fromDb({ data: null, error });
+    if (!data.some((n) => n.id === id)) return invalid();
+    writes.push(db.from('wbs_nodes').update({ color }).in('id', subtreeIds(data, id)));
+  }
+  const results = await Promise.all(writes);
+  return fromDb(results.find((r) => r.error) ?? results[0]);
 }
 
 export async function deleteWbsNode(id: string): Promise<ActionResult<null>> {

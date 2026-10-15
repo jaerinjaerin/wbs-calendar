@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
-import { createWbsNode, renameWbsNode, deleteWbsNode } from '@/app/actions';
+import { createWbsNode, deleteWbsNode } from '@/app/actions';
 import { errorMessage } from '@/lib/actionResult';
 import { buildTree } from '@/lib/wbs';
 import type { WbsTreeNode, WbsNode, Task } from '@/types';
@@ -9,10 +9,10 @@ import { useToast } from '@/components/Toast';
 import { inputCls, primaryBtn, secondaryBtn, dangerBtn, modalOverlay, modalCard } from '@/lib/styles';
 import { COLOR_PRESETS } from '@/lib/color';
 
-interface AddingState {
-  parentId: string | null;
-  depth: number;
-}
+// one modal for both: add (under parentId) or edit (an existing node)
+type FormState =
+  | { mode: 'add'; parentId: string | null; depth: number }
+  | { mode: 'edit'; node: WbsTreeNode };
 
 interface WbsTreeProps {
   projectId: string;
@@ -21,19 +21,18 @@ interface WbsTreeProps {
   hiddenIds: Set<string>;
   onToggleNode: (id: string) => void;
   onDataChange: () => Promise<void>;
+  onUpdateNode: (id: string, changes: { name?: string; color?: string }) => void;
 }
 
 // Renders the parent's data; after an edit the parent's reload refreshes it.
-export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggleNode, onDataChange }: WbsTreeProps) {
+export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggleNode, onDataChange, onUpdateNode }: WbsTreeProps) {
   const tree = useMemo(() => {
     const counts: Record<string, number> = {};
     tasks.forEach(({ wbs_node_id }) => { counts[wbs_node_id] = (counts[wbs_node_id] ?? 0) + 1; });
     return buildTree(wbsNodes, counts);
   }, [wbsNodes, tasks]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
-  const [adding, setAdding] = useState<AddingState | null>(null);
+  const [form, setForm] = useState<FormState | null>(null);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLOR_PRESETS[0]);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -57,15 +56,36 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
   }
 
   function openAddPopup(parentId: string | null, depth: number) {
-    setAdding({ parentId, depth });
+    setForm({ mode: 'add', parentId, depth });
     setNewName('');
     setNewColor(parentId ? (findNode(tree, parentId)?.color ?? COLOR_PRESETS[0]) : COLOR_PRESETS[0]);
     setTimeout(() => nameInputRef.current?.focus(), 0);
   }
 
-  async function confirmAdd() {
-    if (!adding || !newName.trim()) return;
-    const { parentId, depth } = adding;
+  function openEditPopup(node: WbsTreeNode) {
+    setForm({ mode: 'edit', node });
+    setNewName(node.name);
+    setNewColor(node.color);
+    setTimeout(() => nameInputRef.current?.select(), 0);
+  }
+
+  function confirmEdit(node: WbsTreeNode) {
+    const name = newName.trim();
+    setForm(null);
+    const changes = {
+      ...(name !== node.name ? { name } : {}),
+      ...(newColor !== node.color ? { color: newColor } : {}),
+    };
+    if (Object.keys(changes).length) onUpdateNode(node.id, changes);
+  }
+
+  function confirmForm() {
+    if (!form || !newName.trim()) return;
+    if (form.mode === 'edit') confirmEdit(form.node);
+    else confirmAdd(form.parentId, form.depth);
+  }
+
+  async function confirmAdd(parentId: string | null, depth: number) {
     const siblings = parentId
       ? tree.flatMap(function findChildren(n): WbsTreeNode[] {
           if (n.id === parentId) return n.children;
@@ -77,7 +97,7 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
     const color = parentId ? (findNode(tree, parentId)?.color ?? newColor) : newColor;
 
     // close first so repeat clicks/Enter can't insert duplicates
-    setAdding(null);
+    setForm(null);
     const { error } = await createWbsNode({
       project_id: projectId,
       parent_id: parentId,
@@ -91,17 +111,6 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
       showToast({ message: errorMessage(error, '분류 추가에 실패했습니다') });
     }
     if (parentId) setCollapsed((prev) => { const next = new Set(prev); next.delete(parentId); return next; });
-    await onDataChange();
-  }
-
-  async function handleRename(id: string) {
-    if (!editName.trim()) return;
-    const { error } = await renameWbsNode(id, editName);
-    if (error) {
-      console.error(error);
-      showToast({ message: errorMessage(error, '분류 이름 변경에 실패했습니다') });
-    }
-    setEditingId(null);
     await onDataChange();
   }
 
@@ -145,30 +154,18 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
           >
             {isChecked && '✓'}
           </span>
-          {editingId === node.id ? (
-            <input
-              className="flex-1 text-body-xs border border-accent rounded-xs py-px px-xxs outline-none"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onBlur={() => handleRename(node.id)}
-              onKeyDown={(e) => e.key === 'Enter' && handleRename(node.id)}
-              onClick={(e) => e.stopPropagation()}
-              autoFocus
-            />
-          ) : (
-            <span
-              className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
-              onDoubleClick={(e) => { e.stopPropagation(); setEditingId(node.id); setEditName(node.name); }}
-            >
-              {node.name}
-            </span>
-          )}
+          <span
+            className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+            onDoubleClick={(e) => { e.stopPropagation(); openEditPopup(node); }}
+          >
+            {node.name}
+          </span>
           <span className="font-mono text-micro text-muted-soft bg-surface-card px-1.5 rounded-pill">{node.task_count}</span>
           <button
             className="opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer text-body-sm text-muted-soft px-0.5"
             title="하위 분류 추가"
             onClick={(e) => { e.stopPropagation(); openAddPopup(node.id, node.depth + 1); }}
-            disabled={!!adding}
+            disabled={!!form}
           >
             +
           </button>
@@ -189,16 +186,16 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
     <aside className="w-[280px] bg-canvas border-r border-hairline flex flex-col overflow-hidden shrink-0">
       <div className="p-md flex items-center justify-between border-b border-hairline-soft">
         <span className="text-body-xs font-semibold uppercase tracking-wider text-muted-soft">WBS</span>
-        <button className="w-[22px] h-[22px] rounded-xs border border-hairline bg-transparent cursor-pointer text-body-sm flex items-center justify-center" onClick={() => openAddPopup(null, 0)} aria-label="분류 추가" title="분류 추가" disabled={!!adding}>+</button>
+        <button className="w-[22px] h-[22px] rounded-xs border border-hairline bg-transparent cursor-pointer text-body-sm flex items-center justify-center" onClick={() => openAddPopup(null, 0)} aria-label="분류 추가" title="분류 추가" disabled={!!form}>+</button>
       </div>
       <div className="flex-1 overflow-y-auto py-xs">
         {tree.map(renderNode)}
       </div>
-      {adding && (
-        <div className={modalOverlay} onClick={() => setAdding(null)}>
+      {form && (
+        <div className={modalOverlay} onClick={() => setForm(null)}>
           <div className={`${modalCard} flex flex-col gap-sm`} onClick={(e) => e.stopPropagation()}>
             <span className="text-title-sm text-ink">
-              {adding.parentId ? '하위 분류 추가' : '분류 추가'}
+              {form.mode === 'edit' ? '분류 수정' : form.parentId ? '하위 분류 추가' : '분류 추가'}
             </span>
             <input
               ref={nameInputRef}
@@ -206,9 +203,10 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
               placeholder="이름 입력"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) confirmAdd(); if (e.key === 'Escape') setAdding(null); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) confirmForm(); if (e.key === 'Escape') setForm(null); }}
             />
-            {!adding.parentId && (
+            {/* only roots pick a color; children follow their root */}
+            {(form.mode === 'edit' ? form.node.depth === 0 : !form.parentId) && (
               <div>
                 <span className="text-body-xs text-muted mb-xxs block">색상</span>
                 <div className="flex gap-xs flex-wrap">
@@ -217,6 +215,8 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
                       key={c}
                       className={`w-7 h-7 rounded-full border-2 cursor-pointer ${newColor === c ? 'border-ink' : 'border-transparent'}`}
                       style={{ background: c }}
+                      aria-label={`색상 ${c}`}
+                      aria-pressed={newColor === c}
                       onClick={() => setNewColor(c)}
                     />
                   ))}
@@ -226,16 +226,16 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
             <div className="flex gap-xs justify-end mt-xs">
               <button
                 className={secondaryBtn}
-                onClick={() => setAdding(null)}
+                onClick={() => setForm(null)}
               >
                 취소
               </button>
               <button
                 className={primaryBtn}
-                onClick={confirmAdd}
+                onClick={confirmForm}
                 disabled={!newName.trim()}
               >
-                추가
+                {form.mode === 'edit' ? '저장' : '추가'}
               </button>
             </div>
           </div>

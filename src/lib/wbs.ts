@@ -58,3 +58,12 @@ export function flattenHierarchical(nodes: WbsNode[]): WbsNode[] {
   walk(null);
   return result;
 }
+
+// node id plus every descendant id
+export function subtreeIds(nodes: Pick<WbsNode, 'id' | 'parent_id'>[], id: string): string[] {
+  const ids = [id];
+  for (let i = 0; i < ids.length; i++) {
+    for (const n of nodes) if (n.parent_id === ids[i]) ids.push(n.id);
+  }
+  return ids;
+}
