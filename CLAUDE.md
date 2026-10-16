@@ -34,6 +34,17 @@ Next.js 14 (App Router) + Supabase + Toast UI Calendar + TypeScript + Tailwind C
 npm run dev  # localhost:3100
 ```
 
+## 로컬 DB
+
+배포 DB에는 실사용자가 있으므로 개발은 로컬 PostgreSQL + PostgREST로 한다 (`brew install postgresql@16 postgrest`).
+
+```bash
+npm run db:setup  # schema.sql + seed.sql로 로컬 DB 재생성 (로컬 데이터 초기화)
+npm run db:api    # PostgREST를 localhost:3001에서 실행 (supabase/local/postgrest.conf)
+```
+
+`.env.local`이 `http://localhost:3001`을 가리키면 `db.ts`가 `/rest/v1` 경로를 떼고 보낸다. 배포 DB 접속값은 `.env.prod.local`에 백업돼 있다. 스키마를 바꿀 때는 `schema.sql`과 `migrations/`를 함께 고치고, 배포 DB 적용은 사용자 확인 후에 한다.
+
 ## 환경변수
 
 `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY` (서버 전용, 서버 액션만 DB에 접근)
