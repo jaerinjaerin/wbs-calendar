@@ -6,6 +6,7 @@ import '@toast-ui/calendar/dist/toastui-calendar.min.css';
 import type { Task, WbsNode, User } from '@/types';
 import { getHolidays } from '@/lib/holidays';
 import { lighter80 } from '@/lib/color';
+import { maxStackDepth, monthWeeks } from '@/lib/monthStack';
 
 function pad(n: number) { return n.toString().padStart(2, '0'); }
 
@@ -61,6 +62,7 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
     const [dateLabel, setDateLabel] = useState('');
+    const [viewMonth, setViewMonth] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
     // ponytail: @toast-ui/calendar reads `window` at module-eval time, which
     // crashes Next's SSR/prerender pass. Loading it lazily in an effect keeps
     // it out of the server bundle's eval path without routing it through
@@ -83,6 +85,7 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
       const date = inst.getDate();
       const d = date.toDate ? date.toDate() : new Date(date);
       setDateLabel(`${d.getFullYear()}년 ${d.getMonth() + 1}월`);
+      setViewMonth({ y: d.getFullYear(), m: d.getMonth() });
     }
 
     useEffect(() => {
@@ -118,6 +121,13 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
 
     const events = [...toCalendarEvents(tasks, users), ...holidayEvents];
 
+    // Show every stacked event instead of "+N": cap = deepest stack this month, and
+    // rows grow tall enough to hold it (wrapper scrolls). Toast UI rows share one height.
+    const weeks = monthWeeks(viewMonth.y, viewMonth.m);
+    const depth = maxStackDepth(events, weeks);
+    // 31 day-name header; per row: 3 padding + 27 date bar + 26 per event + 4 slack
+    const neededHeight = 31 + weeks.length * (34 + depth * 26);
+
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="bg-canvas border-b border-hairline px-3 md:px-5">
@@ -146,11 +156,11 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
           {CalendarComp && (
             <CalendarComp
               ref={calRef}
-              height="100%"
+              height={`max(100%, ${neededHeight}px)`}
               view="month"
               calendars={calendars}
               events={events}
-              month={{ startDayOfWeek: 0, isAlways6Weeks: false }}
+              month={{ startDayOfWeek: 0, isAlways6Weeks: false, visibleEventCount: depth }}
               week={{ startDayOfWeek: 0 }}
               usageStatistics={false}
               useDetailPopup={false}
