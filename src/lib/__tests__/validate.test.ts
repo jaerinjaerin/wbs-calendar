@@ -60,6 +60,9 @@ describe('cleanTaskChanges', () => {
     expect(cleanTaskChanges({ name: '작업', id: ID, evil: 1 })).toEqual({ name: '작업' });
     expect(cleanTaskChanges({ evil: 1 })).toBeNull();
   });
+  it('accepts the milestone flag', () => {
+    expect(cleanTaskChanges({ is_milestone: true })).toEqual({ is_milestone: true });
+  });
   it('allows clearing nullable fields', () => {
     expect(cleanTaskChanges({ assignee_id: null, priority: null, memo: null, url: null }))
       .toEqual({ assignee_id: null, priority: null, memo: null, url: null });
@@ -70,6 +73,7 @@ describe('cleanTaskChanges', () => {
     expect(cleanTaskChanges({ wbs_node_id: 'x' })).toBeNull();
     expect(cleanTaskChanges({ memo: 'a'.repeat(2001) })).toBeNull();
     expect(cleanTaskChanges({ name: '  ' })).toBeNull();
+    expect(cleanTaskChanges({ is_milestone: 'yes' })).toBeNull();
   });
 });
 
@@ -78,7 +82,7 @@ describe('cleanNewTask', () => {
   it('fills optional fields with defaults', () => {
     expect(cleanNewTask(base)).toEqual({
       id: ID, name: '새 작업', start_date: '2026-10-12', end_date: '2026-10-14', wbs_node_id: ID2,
-      status: 'todo', assignee_id: null, priority: null, memo: null, url: null,
+      status: 'todo', assignee_id: null, priority: null, memo: null, url: null, is_milestone: false,
     });
   });
   it('requires id, name, dates and category', () => {

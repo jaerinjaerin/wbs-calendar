@@ -115,6 +115,10 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
             onBlur={() => commit('name', name)}
             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
           />
+          <label className={`${rowCls} cursor-pointer`}>
+            <span className={labelCls}>주요일정</span>
+            <input type="checkbox" className="ml-auto mr-xxs accent-ink cursor-pointer" checked={!!task.is_milestone} onChange={(e) => onUpdate({ is_milestone: e.target.checked })} />
+          </label>
           <button
             className="self-start text-body-xs text-body bg-transparent border-none cursor-pointer rounded-sm px-xxs py-xxs mb-xxs hover:bg-surface-strong"
             onClick={() => setEditingDates((v) => !v)}

@@ -25,6 +25,7 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
   const [priority, setPriority] = useState<TaskPriority | ''>('');
   const [memo, setMemo] = useState('');
   const [url, setUrl] = useState('');
+  const [isMilestone, setIsMilestone] = useState(false);
   const sortedNodes = useMemo(() => flattenHierarchical(wbsNodes), [wbsNodes]);
   const [pickedNodeId, setWbsNodeId] = useState('');
   const wbsNodeId = pickedNodeId || sortedNodes[0]?.id || ''; // nodes may arrive after the modal opens
@@ -57,6 +58,7 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
       memo: memo.trim() || null,
       url: url.trim() || null,
       wbs_node_id: wbsNodeId,
+      is_milestone: isMilestone,
     });
   }
 
@@ -79,6 +81,10 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
               required
               autoFocus
             />
+            <label className={`${rowCls} cursor-pointer`}>
+              <span className={labelCls}>주요일정</span>
+              <input type="checkbox" className="ml-auto mr-xxs accent-ink cursor-pointer" checked={isMilestone} onChange={(e) => setIsMilestone(e.target.checked)} />
+            </label>
             <div className={rowCls}>
               <span className={labelCls}>시작</span>
               <input type="date" className={`${fieldCls} ml-auto text-body-xs px-xxs`} value={startDate} onChange={(e) => changeStart(e.target.value)} required />

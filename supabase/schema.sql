@@ -38,7 +38,8 @@ create table tasks (
   status text not null default 'todo' check (status in ('todo', 'in_progress', 'done')),
   memo text,
   url text,
-  priority text check (priority in ('high', 'medium', 'low'))
+  priority text check (priority in ('high', 'medium', 'low')),
+  is_milestone boolean not null default false
 );
 
 create index idx_wbs_nodes_project on wbs_nodes(project_id);

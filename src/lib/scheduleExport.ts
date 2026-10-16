@@ -28,20 +28,20 @@ export function weekMonth(monday: number): { label: string; key: string } {
   return { label: MONTHS[wed.getUTCMonth()], key: `${wed.getUTCFullYear()}-${wed.getUTCMonth()}` };
 }
 
-export const MILESTONE_WBS_NAME = '주요 일정';
+const MILESTONE_LABEL = '주요 일정';
 
 export interface Week { monday: number; label: string; month: string; monthKey: string }
 // start/end are week indexes into Layout.weeks, inclusive
 export interface Bar { lane: number; start: number; end: number; name: string; dates: string; color: string }
 export interface Section { name: string; lanes: number; bars: Bar[] }
 export interface Group { name: string; sections: Section[] }
-export interface Layout { weeks: Week[]; milestones: Section; groups: Group[] }
+// milestones: one cell per week, names of checked tasks starting that week joined by newlines
+export interface Layout { weeks: Week[]; milestones: string[]; groups: Group[] }
 
-interface Item { name: string; s: number; e: number; root: WbsNode; detail: WbsNode | null; color: string }
+interface Item { name: string; s: number; e: number; root: WbsNode; detail: WbsNode | null; color: string; milestone: boolean }
 
 const md = (t: number) => `${new Date(t).getUTCMonth() + 1}/${new Date(t).getUTCDate()}`;
 const bySort = (a: WbsNode, b: WbsNode) => a.sort_order - b.sort_order;
-const isMilestone = (n: WbsNode) => n.name.trim() === MILESTONE_WBS_NAME;
 
 export function buildLayout(tasks: Task[], wbsNodes: WbsNode[]): Layout {
   const byId = new Map(wbsNodes.map((n) => [n.id, n]));
@@ -61,6 +61,7 @@ export function buildLayout(tasks: Task[], wbsNodes: WbsNode[]): Layout {
       root: chain[0],
       detail: chain[1] ?? null,
       color: byId.get(t.wbs_node_id)!.color,
+      milestone: !!t.is_milestone,
     };
   });
 
@@ -74,8 +75,10 @@ export function buildLayout(tasks: Task[], wbsNodes: WbsNode[]): Layout {
   }
   const weekIndex = (t: number) => Math.round((mondayOf(t) - weeks[0].monday) / (7 * DAY));
 
+  const chrono = (list: Item[]) => [...list].sort((x, y) => x.s - y.s || x.e - y.e || x.name.localeCompare(y.name));
+
   function section(name: string, list: Item[]): Section {
-    const sorted = [...list].sort((x, y) => x.s - y.s || x.e - y.e || x.name.localeCompare(y.name));
+    const sorted = chrono(list);
     const laneEnds: number[] = []; // last occupied week index per lane
     const bars = sorted.map((i) => {
       const start = weekIndex(i.s);
@@ -90,7 +93,7 @@ export function buildLayout(tasks: Task[], wbsNodes: WbsNode[]): Layout {
   }
 
   const roots = Array.from(new Set(items.map((i) => i.root))).sort(bySort);
-  const groups: Group[] = roots.filter((r) => !isMilestone(r)).map((root) => {
+  const groups: Group[] = roots.map((root) => {
     const mine = items.filter((i) => i.root === root);
     const direct = mine.filter((i) => !i.detail);
     const details = Array.from(new Set(mine.flatMap((i) => (i.detail ? [i.detail] : [])))).sort(bySort);
@@ -103,7 +106,10 @@ export function buildLayout(tasks: Task[], wbsNodes: WbsNode[]): Layout {
     };
   });
 
-  return { weeks, milestones: section(MILESTONE_WBS_NAME, items.filter((i) => isMilestone(i.root))), groups };
+  const milestones = weeks.map(() => [] as string[]);
+  for (const i of chrono(items.filter((i) => i.milestone))) milestones[weekIndex(i.s)].push(i.name);
+
+  return { weeks, milestones: milestones.map((names) => names.join('\n')), groups };
 }
 
 const FONT_BOLD = 'Samsung SS Head KR Bold';
@@ -240,13 +246,21 @@ export function renderWorkbook(layout: Layout, projectName: string, today: Date)
   }
 
   let row = 5;
+  // one row, one unmerged cell per week; grows to fit the busiest week
+  const msTop = row;
+  ws.getRow(msTop).height = Math.max(43, ...milestones.map((t, i) => textLines(t, 10, ws.getColumn(FIRST_WEEK_COL + i).width ?? 0) * 14 + 4));
+  milestones.forEach((t, i) => put(msTop, FIRST_WEEK_COL + i, t || null, bold(), ARGB.milestone));
+  put(msTop, 2, MILESTONE_LABEL, bold(), ARGB.header);
+  put(msTop, 3, null, bold(), ARGB.header);
+  merge(msTop, 2, msTop, 3);
+  const msBottom = row++;
+
   // writes the week area of one section's lanes; returns its first row
-  function writeLanes(sec: Section, isMilestone: boolean): number {
+  function writeLanes(sec: Section): number {
     const top = row;
-    const font = isMilestone ? bold() : medium;
     for (let l = 0; l < sec.lanes; l++, row++) {
-      ws.getRow(row).height = isMilestone ? 43 : 30;
-      for (let c = FIRST_WEEK_COL; c <= lastCol; c++) put(row, c, null, font, isMilestone ? ARGB.milestone : undefined);
+      ws.getRow(row).height = 30;
+      for (let c = FIRST_WEEK_COL; c <= lastCol; c++) put(row, c, null, medium);
     }
     for (const bar of sec.bars) {
       const r = top + bar.lane;
@@ -256,8 +270,8 @@ export function renderWorkbook(layout: Layout, projectName: string, today: Date)
       ws.getRow(r).height = Math.max(ws.getRow(r).height ?? 0, needed);
       const c1 = FIRST_WEEK_COL + bar.start;
       const c2 = FIRST_WEEK_COL + bar.end;
-      const { fill, text } = isMilestone ? { fill: ARGB.milestone, text: ARGB.black } : barColors(bar.color);
-      const barFont = { ...font, color: { argb: text } };
+      const { fill, text } = barColors(bar.color);
+      const barFont = { ...medium, color: { argb: text } };
       // name on top, dates on a second, smaller line (rich text keeps both in one cell)
       const value = { richText: [{ text: bar.name, font: barFont }, { text: `\n(${bar.dates})`, font: { ...barFont, size: 8 } }] };
       for (let c = c1; c <= c2; c++) put(r, c, c === c1 ? value : null, barFont, fill);
@@ -266,18 +280,10 @@ export function renderWorkbook(layout: Layout, projectName: string, today: Date)
     return top;
   }
 
-  const msTop = writeLanes(milestones, true);
-  for (let r = msTop; r < row; r++) {
-    put(r, 2, r === msTop ? MILESTONE_WBS_NAME : null, bold(), ARGB.header);
-    put(r, 3, null, bold(), ARGB.header);
-  }
-  merge(msTop, 2, row - 1, 3);
-  const msBottom = row - 1;
-
   for (const g of groups) {
     const gTop = row;
     for (const s of g.sections) {
-      const sTop = writeLanes(s, false);
+      const sTop = writeLanes(s);
       for (let r = sTop; r < row; r++) put(r, 3, r === sTop ? s.name : null, bold(), ARGB.side);
       merge(sTop, 3, row - 1, 3);
     }

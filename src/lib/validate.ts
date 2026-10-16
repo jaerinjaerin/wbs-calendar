@@ -8,7 +8,7 @@ const STATUSES: TaskStatus[] = ['todo', 'in_progress', 'done'];
 const PRIORITIES: TaskPriority[] = ['high', 'medium', 'low'];
 const NAME_MAX = 100;
 const TEXT_MAX = 2000;
-const TASK_FIELDS = ['name', 'start_date', 'end_date', 'assignee_id', 'status', 'priority', 'memo', 'url', 'wbs_node_id'] as const;
+const TASK_FIELDS = ['name', 'start_date', 'end_date', 'assignee_id', 'status', 'priority', 'memo', 'url', 'wbs_node_id', 'is_milestone'] as const;
 
 export function isUuid(v: unknown): v is string {
   return typeof v === 'string' && UUID.test(v);
@@ -76,6 +76,10 @@ export function cleanTaskChanges(v: unknown): Partial<Task> | null {
         if (val !== null && !PRIORITIES.includes(val as TaskPriority)) return null;
         out.priority = val as TaskPriority | null;
         break;
+      case 'is_milestone':
+        if (typeof val !== 'boolean') return null;
+        out.is_milestone = val;
+        break;
       case 'memo':
       case 'url':
         if (!isOptionalText(val)) return null;
@@ -95,7 +99,7 @@ export function cleanNewTask(v: unknown): Task | null {
   const fields = cleanTaskChanges(src);
   if (!fields?.name || !fields.start_date || !fields.end_date || !fields.wbs_node_id) return null;
   return {
-    assignee_id: null, status: 'todo', priority: null, memo: null, url: null,
+    assignee_id: null, status: 'todo', priority: null, memo: null, url: null, is_milestone: false,
     ...fields,
     id: src.id,
   } as Task;

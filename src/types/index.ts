@@ -42,6 +42,7 @@ export interface Task {
   memo?: string | null;
   url?: string | null;
   priority?: TaskPriority | null;
+  is_milestone?: boolean;
 }
 
 export interface WbsTreeNode extends WbsNode {
