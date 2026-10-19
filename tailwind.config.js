@@ -75,6 +75,12 @@ module.exports = {
         subtle: '0 1px 2px rgba(0,0,0,0.05)',
         card: '0 4px 12px rgba(0,0,0,0.08)',
       },
+      keyframes: {
+        'sheet-up': { from: { transform: 'translateY(100%)' } },
+      },
+      animation: {
+        'sheet-up': 'sheet-up 200ms ease-out',
+      },
     },
   },
   plugins: [],

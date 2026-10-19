@@ -12,6 +12,7 @@ import ExportButtons from '@/components/ExportButtons';
 import TaskModal from '@/components/TaskModal';
 import TaskPeekPanel from '@/components/TaskPeekPanel';
 import { useToast } from '@/components/Toast';
+import { useIsMobile } from '@/lib/useIsMobile';
 import type { Task, WbsNode, User, ProjectSummary } from '@/types';
 
 interface ProjectCalendarProps {
@@ -36,6 +37,7 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [popoverRect, setPopoverRect] = useState<DOMRect | null>(null);
   const { showToast, hideToast, toastNode } = useToast();
+  const mobile = useIsMobile();
 
   const loadData = useCallback(async (pid: string) => {
     const { data, error } = await loadProjectData(pid);
@@ -191,7 +193,7 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
 
       {selectedTask && (
         <>
-        <div className="fixed inset-0 z-40" onClick={() => setSelectedTaskId(null)} />
+        {!mobile && <div className="fixed inset-0 z-40" onClick={() => setSelectedTaskId(null)} />}
         <TaskPeekPanel
           key={selectedTask.id}
           task={selectedTask}

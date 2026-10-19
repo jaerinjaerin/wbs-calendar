@@ -4,6 +4,8 @@ import { useMemo, useRef, useState, useEffect } from 'react';
 import type { Task, WbsNode, User, TaskStatus, TaskPriority } from '@/types';
 import { flattenHierarchical } from '@/lib/wbs';
 import WbsSelect from './WbsSelect';
+import BottomSheet from './BottomSheet';
+import { useIsMobile } from '@/lib/useIsMobile';
 import { groupCls, rowCls, labelCls, fieldCls, selectCls, statusCls, priorityCls } from './TaskPeekPanel';
 import { primaryBtn, secondaryBtn, modalOverlay } from '@/lib/styles';
 
@@ -17,6 +19,7 @@ interface TaskModalProps {
 }
 
 export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, onSave, onClose }: TaskModalProps) {
+  const mobile = useIsMobile();
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState(defaultStart ?? '');
   const [endDate, setEndDate] = useState(defaultEnd ?? defaultStart ?? '');
@@ -62,13 +65,8 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
     });
   }
 
-  return (
-    <div className={modalOverlay} onClick={onClose}>
-      <form
-        className="w-[calc(100%-32px)] max-w-[460px] bg-canvas rounded-lg shadow-card p-md flex flex-col gap-sm"
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={handleSubmit}
-      >
+  const fields = (
+    <>
         {/* title + period */}
         <div className={`${groupCls} flex gap-sm`}>
           <span className="w-1 rounded-xs my-xs shrink-0" style={{ background: color }} />
@@ -79,7 +77,7 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              autoFocus
+              autoFocus={!mobile}
             />
             <label className={`${rowCls} cursor-pointer`}>
               <span className={labelCls}>주요일정</span>
@@ -153,6 +151,25 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
           <button type="button" className={secondaryBtn} onClick={onClose}>취소</button>
           <button type="submit" className={primaryBtn}>추가</button>
         </div>
+    </>
+  );
+
+  if (mobile) {
+    return (
+      <BottomSheet onClose={onClose}>
+        <form className="flex flex-col gap-sm" onSubmit={handleSubmit}>{fields}</form>
+      </BottomSheet>
+    );
+  }
+
+  return (
+    <div className={modalOverlay} onClick={onClose}>
+      <form
+        className="w-[calc(100%-32px)] max-w-[460px] bg-canvas rounded-lg shadow-card p-md flex flex-col gap-sm"
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={handleSubmit}
+      >
+        {fields}
       </form>
     </div>
   );

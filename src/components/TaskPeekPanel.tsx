@@ -3,6 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Task, WbsNode, User, TaskStatus, TaskPriority } from '@/types';
 import WbsSelect from './WbsSelect';
+import BottomSheet from './BottomSheet';
+import { useIsMobile } from '@/lib/useIsMobile';
 
 interface TaskPeekPanelProps {
   task: Task;
@@ -32,12 +34,13 @@ const GAP = 8;
 const fmt = (d: string) => `${d.replaceAll('-', '.')}.`;
 
 export const groupCls = 'bg-surface-card rounded-lg px-sm';
-export const rowCls = 'flex items-center gap-xs min-h-9 text-body-xs [&+&]:border-t [&+&]:border-hairline';
+export const rowCls = 'flex items-center gap-xs min-h-9 max-md:min-h-11 text-body-xs [&+&]:border-t [&+&]:border-hairline';
 export const labelCls = 'text-muted text-body-xs shrink-0 w-[52px]';
 export const fieldCls = 'bg-transparent border-none outline-none rounded-sm'; // no focus ring: the caret is enough
 export const selectCls = 'flex-1 min-w-0 bg-transparent border-none outline-none rounded-sm py-xxs px-xxs text-body-xs cursor-pointer hover:bg-surface-strong';
 
 export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpdate, onDelete, onClose }: TaskPeekPanelProps) {
+  const mobile = useIsMobile();
   const panelRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState(task.name);
   const [memo, setMemo] = useState(task.memo ?? '');
@@ -98,12 +101,8 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
     onUpdate({ end_date: end < task.start_date ? task.start_date : end });
   }
 
-  return (
-    <div
-      ref={panelRef}
-      style={{ width: POPOVER_W, left, top }}
-      className="fixed z-50 bg-canvas rounded-lg shadow-card border border-hairline p-xs flex flex-col gap-xs"
-    >
+  const body = (
+    <>
       {/* title + period */}
       <div className={`${groupCls} flex gap-sm`}>
         <span className="w-1 rounded-xs my-xs shrink-0" style={{ background: node?.color ?? '#ccc' }} />
@@ -202,6 +201,18 @@ export default function TaskPeekPanel({ task, wbsNodes, users, anchorRect, onUpd
       <div className="px-xxs">
         <button className="text-error text-body-xs cursor-pointer bg-transparent border-none py-xxs px-0 hover:underline" onClick={onDelete}>작업 삭제</button>
       </div>
+    </>
+  );
+
+  if (mobile) return <BottomSheet onClose={onClose}>{body}</BottomSheet>;
+
+  return (
+    <div
+      ref={panelRef}
+      style={{ width: POPOVER_W, left, top }}
+      className="fixed z-50 bg-canvas rounded-lg shadow-card border border-hairline p-xs flex flex-col gap-xs"
+    >
+      {body}
     </div>
   );
 }
