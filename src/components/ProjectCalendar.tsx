@@ -151,7 +151,7 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-dvh overflow-hidden">
       <header className="flex items-center justify-between px-3 h-12 md:px-5 md:h-14 bg-surface-dark shrink-0">
         <div className="flex items-center gap-xs md:gap-sm">
           <button className="bg-transparent border-none text-on-dark text-body-md cursor-pointer px-xs py-xxs rounded-md hover:bg-surface-dark-elevated" onClick={() => router.push('/')} aria-label="프로젝트 목록">←</button>

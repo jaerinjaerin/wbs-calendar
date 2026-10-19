@@ -10,14 +10,14 @@ export default async function ProjectListPage() {
   if (!projects) {
     console.error(error);
     return (
-      <div className="flex items-center justify-center min-h-screen p-lg">
+      <div className="flex items-center justify-center min-h-dvh p-lg">
         <p className="text-body-sm text-muted text-center">{errorMessage(error, '프로젝트 목록을 불러오지 못했습니다. 새로고침해 주세요')}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-lg">
+    <div className="flex flex-col items-center justify-center min-h-dvh p-lg">
       <h1 className="flex items-center gap-sm font-display text-display-sm text-ink mb-xs">
         <img src="/icon.svg" alt="" className="w-xl h-xl" />
         WBS 캘린더

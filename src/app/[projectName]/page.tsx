@@ -17,7 +17,7 @@ export default async function ProjectCalendarPage({ params }: { params: { projec
 
 function Message({ text }: { text: string }) {
   return (
-    <div className="flex flex-col items-center justify-center h-screen gap-md">
+    <div className="flex flex-col items-center justify-center h-dvh gap-md">
       <p className="text-body-md text-muted">{text}</p>
       <Link href="/" className="py-xs px-5 rounded-md border border-hairline bg-canvas text-body-xs font-medium">
         ← 프로젝트 목록
