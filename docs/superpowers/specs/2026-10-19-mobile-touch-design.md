@@ -66,7 +66,7 @@ export function moveRange(range: DayRange, grab: string, over: string): DayRange
 **흐름**
 1. `touchstart`(1개 손가락): 대상이 막대(`[data-event-id]`, 공휴일 제외)인지 빈 칸인지 기록하고 450ms 타이머를 시작한다.
 2. 타이머 전에 10px 넘게 움직이면 취소한다(스크롤로 판단).
-3. 타이머가 끝나면 `lifted`: 진동(Android), 막대 강조, 다른 막대 흐리게, 상단 안내 알약("10월 23일 (금) · +3일").
+3. 타이머가 끝나면 `lifted`: 진동(Android), 막대 강조, 다른 막대 흐리게, 안내 문구 표시(아래 "표시" 참고).
 4. `touchmove`(lifted): 손가락 아래 날짜가 바뀔 때마다
    - 막대: `inst.updateEvent(id, calendarId, moveRange(...))`로 미리보기만 한다.
    - 빈 칸: 임시 이벤트 `__new`를 `inst.createEvents` / `updateEvent`로 그 날짜에 둔다.
@@ -75,6 +75,10 @@ export function moveRange(range: DayRange, grab: string, over: string): DayRange
    - 막대를 놓음: 날짜가 바뀌었으면 `onMoveTask(id, next, prev)`를 한 번 호출한다. 그대로면 미리보기를 원래대로 되돌린다.
    - 빈 칸을 놓음: `__new`를 지우고 `onPickDate(놓은 날짜)`.
 6. `touchcancel` / 멀티터치: 미리보기를 원래대로 되돌리고 `idle`.
+7. 들린 상태에서 손가락이 캘린더 격자 밖(헤더 등)으로 나가면 미리보기를 원래 자리로 되돌리고 안내를 "날짜 위로 옮기세요"로 바꾼다. 그 상태에서 놓으면 아무것도 바뀌지 않는다.
+8. 공휴일 막대를 누르면 빈 칸과 같이 처리한다(공휴일은 옮길 수 없다).
+
+**표시**: 강조 칸은 컨테이너 안의 절대 위치 오버레이로 그린다. 안내 문구("10월 23일 (금) · +3일")는 끄는 동안 헤더의 "2026년 10월" 자리에 대신 표시한다. 목업의 손가락 위 칩은 막대가 실시간으로 움직이므로 넣지 않는다.
 
 **목업에서 확인한 필수 규칙**
 - 막대에는 `touch-action: none`을 준다. 누르는 순간 네이티브 스크롤이 시작되어 길게 누르기가 "스크롤로 판단"으로 취소되던 문제를 막는다(Claude 앱 iPhone에서 재현됨).
@@ -102,7 +106,7 @@ onPickDate: (date: string) => void;
 ```
 
 - 화면 하단 고정, 위쪽 모서리 16px 라운드, 상단 손잡이, 배경 `bg-black/30`.
-- 배경 탭과 Esc로 닫는다. 최대 높이 `85dvh`, 내용은 내부 스크롤.
+- 배경을 탭하면 닫는다. 닫기 전에 포커스된 입력을 blur해서 "포커스가 빠질 때 저장"되는 필드가 저장되게 한다(iOS는 빈 영역을 탭해도 blur되지 않는다). Esc는 안에 들어가는 `TaskPeekPanel`·`TaskModal`이 이미 처리한다. 최대 높이 `85dvh`, 내용은 내부 스크롤.
 - 하단 패딩에 `env(safe-area-inset-bottom)`을 더한다.
 - 올라오는 애니메이션 200ms, `prefers-reduced-motion`이면 끈다.
 - `z-index`는 기존 모달(`z-[100]`)과 같은 층, 토스트(`z-[110]`)보다 아래.
