@@ -26,7 +26,9 @@ export function moveRange(range: DayRange, grab: string, over: string): DayRange
 
 // Geometry, not elementFromPoint: event bars sit on top of the cells and hide the date.
 // rows[i] is the rect of week row i, weeks[i] its date range (Sunday start).
-export function cellAtPoint(x: number, y: number, rows: RectLike[], weeks: DayRange[]): Cell | null {
+// clip = the scroll container's visible rect; rows scrolled out of it still have screen rects (under the header).
+export function cellAtPoint(x: number, y: number, rows: RectLike[], weeks: DayRange[], clip?: RectLike): Cell | null {
+  if (clip && (x < clip.left || x >= clip.left + clip.width || y < clip.top || y >= clip.top + clip.height)) return null;
   for (let i = 0; i < rows.length && i < weeks.length; i++) {
     const r = rows[i];
     if (x < r.left || x >= r.left + r.width || y < r.top || y >= r.top + r.height) continue;

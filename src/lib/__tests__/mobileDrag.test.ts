@@ -53,6 +53,13 @@ describe('cellAtPoint', () => {
     expect(cellAtPoint(100, 99, rows, weeks)).toBeNull();  // above (header)
     expect(cellAtPoint(100, 350, rows, weeks)).toBeNull(); // below last row
   });
+
+  it('ignores rows scrolled out of the visible clip area', () => {
+    // container scrolled so rows 0-1 sit above its top edge (under the header on screen)
+    const clip = { left: 10, top: 200, width: 350, height: 300 };
+    expect(cellAtPoint(100, 120, rows, weeks, clip)).toBeNull();
+    expect(cellAtPoint(10 + 50 * 2 + 1, 260, rows, weeks, clip)?.date).toBe('2026-10-20');
+  });
 });
 
 describe('dayLabel', () => {

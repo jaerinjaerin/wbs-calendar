@@ -57,7 +57,7 @@ export function useLongPressDrag(opts: LongPressOptions): DragOverlay | null {
 
     const inst = () => optsRef.current.getInstance();
     const rows = () => Array.from(container.querySelectorAll(ROW_SEL)).map((r) => r.getBoundingClientRect());
-    const cellAt = (x: number, y: number) => cellAtPoint(x, y, rows(), optsRef.current.weeks);
+    const cellAt = (x: number, y: number) => cellAtPoint(x, y, rows(), optsRef.current.weeks, container.getBoundingClientRect());
 
     function boxOf(rowIndex: number, col: number) {
       const r = rows()[rowIndex];
