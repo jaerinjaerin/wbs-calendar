@@ -81,7 +81,7 @@ export function moveRange(range: DayRange, grab: string, over: string): DayRange
 **표시**: 강조 칸은 컨테이너 안의 절대 위치 오버레이로 그린다. 안내 문구("10월 23일 (금) · +3일")는 끄는 동안 헤더의 "2026년 10월" 자리에 대신 표시한다. 목업의 손가락 위 칩은 막대가 실시간으로 움직이므로 넣지 않는다.
 
 **목업에서 확인한 필수 규칙**
-- 막대에는 `touch-action: none`을 준다. 누르는 순간 네이티브 스크롤이 시작되어 길게 누르기가 "스크롤로 판단"으로 취소되던 문제를 막는다(Claude 앱 iPhone에서 재현됨).
+- 막대에 `touch-action: none`을 주지 않는다. 처음에는 누르는 순간 네이티브 스크롤이 시작되어 길게 누르기가 취소되던 문제(Claude 앱 iPhone)를 막으려고 넣었지만, 막대에서 시작한 스크롤까지 막혀서 뺐다(10-19). 들린 뒤의 스크롤은 아래 document 리스너가 막는다.
 - 스크롤을 막는 non-passive `touchmove` 리스너(`lifted`일 때만 `preventDefault`)는 **document에 처음부터** 등록한다. 브라우저는 `touchstart` 시점에 `touchmove`를 취소할 수 있는지를 정하므로, 제스처 도중에 붙인 리스너로는 스크롤을 못 막는다(빈 칸 드래그 중 스크롤되던 원인).
 - `touchmove`/`touchend`/`touchcancel`은 **손가락을 댄 요소에도 직접** 붙인다. 미리보기로 캘린더가 다시 그려져 그 요소가 DOM에서 빠지면 이벤트가 document까지 버블링되지 않는다(실시간 미리보기 중 멈추던 원인).
 - `touchend`에서 `preventDefault`로 뒤따르는 합성 click을 막는다. 탭 처리는 위 5번 한 곳에서만 한다.

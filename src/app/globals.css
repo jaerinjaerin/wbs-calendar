@@ -128,9 +128,3 @@ body {
   color: theme('colors.error');
   font-weight: 600;
 }
-
-/* Mobile long-press drag: a press on a bar must never start a native scroll,
-   or the hold gets cancelled as "scrolling" (seen in the iPhone Claude app). */
-@media (max-width: 767px) {
-  .toastui-calendar-weekday-event-block { touch-action: none; }
-}
