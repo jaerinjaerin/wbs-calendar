@@ -7,6 +7,9 @@ import type { Task, WbsNode, User } from '@/types';
 import { getHolidays } from '@/lib/holidays';
 import { lighter80 } from '@/lib/color';
 import { maxStackDepth, monthWeeks } from '@/lib/monthStack';
+import type { DayRange } from '@/lib/monthStack';
+import { useIsMobile } from '@/lib/useIsMobile';
+import { useLongPressDrag, NEW_CALENDAR_ID } from '@/components/useLongPressDrag';
 
 function pad(n: number) { return n.toString().padStart(2, '0'); }
 
@@ -18,6 +21,8 @@ interface CalendarViewProps {
   onUpdateTask: (taskId: string, changes: Partial<Task>) => void;
   onSelectDateRange: (start: string, end: string) => void;
   onAddTask: () => void;
+  onMoveTask: (taskId: string, next: DayRange, prev: DayRange) => void;
+  onPickDate: (date: string) => void;
 }
 
 export interface CalendarViewHandle {
@@ -57,7 +62,7 @@ function toCalendarEvents(tasks: Task[], users: User[]) {
 }
 
 const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
-  function CalendarView({ tasks, wbsNodes, users, onClickEvent, onUpdateTask, onSelectDateRange, onAddTask }, ref) {
+  function CalendarView({ tasks, wbsNodes, users, onClickEvent, onUpdateTask, onSelectDateRange, onAddTask, onMoveTask, onPickDate }, ref) {
     const calRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
@@ -104,6 +109,7 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
     const calendars = [
       ...toCalendarInfos(wbsNodes),
       { id: '_holiday', name: '공휴일', backgroundColor: '#fef2f2', borderColor: '#ef4444' },
+      { id: NEW_CALENDAR_ID, name: '새 작업', backgroundColor: '#ffffff', borderColor: '#111111' },
     ];
 
     const currentYear = new Date().getFullYear();
@@ -128,6 +134,22 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
     // 31 day-name header; per row: 3 padding + 27 date bar + 26 per event + 4 slack
     const neededHeight = 31 + weeks.length * (34 + depth * 26);
 
+    const mobile = useIsMobile();
+    const overlay = useLongPressDrag({
+      enabled: mobile,
+      containerRef,
+      getInstance: () => calRef.current?.getInstance?.(),
+      weeks,
+      getRange: (id) => {
+        const t = tasks.find((x) => x.id === id);
+        return t ? { start: t.start_date, end: t.end_date } : null;
+      },
+      onTapTask: onClickEvent,
+      onTapDate: onPickDate,
+      onMoveTask,
+      onDropNew: onPickDate,
+    });
+
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="bg-canvas border-b border-hairline px-3 md:px-5">
@@ -140,7 +162,7 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
             </button>
           </div>
           <div className="flex items-center justify-between pb-2.5">
-            <span className="text-title-md md:text-title-lg">{dateLabel}</span>
+            <span className={`text-title-md md:text-title-lg ${overlay ? 'text-accent' : ''}`}>{overlay ? overlay.hint : dateLabel}</span>
             <div className="flex items-center gap-1">
               <button className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer border-none bg-transparent text-muted hover:bg-surface-card" aria-label="이전 달" onClick={() => navigate('prev')}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -152,7 +174,14 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
             </div>
           </div>
         </div>
-        <div ref={containerRef} className="flex-1 overflow-auto p-2 md:p-4 md:px-5" onMouseDown={(e) => { mouseDownPos.current = { x: e.clientX, y: e.clientY }; }}>
+        <div ref={containerRef} className="relative flex-1 overflow-auto p-2 md:p-4 md:px-5 max-md:select-none max-md:[-webkit-touch-callout:none]" onMouseDown={(e) => { mouseDownPos.current = { x: e.clientX, y: e.clientY }; }}>
+          {overlay?.box && <div className="absolute z-[1] pointer-events-none rounded-sm bg-accent/15 ring-2 ring-accent" style={overlay.box} />}
+          {mobile && (
+            // iOS 18+ plays a haptic when a switch toggles; clicked from touchend only
+            <label id="haptic-switch" aria-hidden="true" className="fixed -left-[9999px] opacity-0">
+              <input type="checkbox" tabIndex={-1} {...{ switch: '' }} />
+            </label>
+          )}
           {CalendarComp && (
             <CalendarComp
               ref={calRef}
@@ -165,7 +194,8 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
               usageStatistics={false}
               useDetailPopup={false}
               useFormPopup={false}
-              gridSelection={true}
+              isReadOnly={mobile}
+              gridSelection={!mobile}
               onClickEvent={(e: any) => {
                 const block = containerRef.current?.querySelector(`[data-event-id="${e.event.id}"]`);
                 const bar = block?.querySelector('.toastui-calendar-weekday-event') ?? block;

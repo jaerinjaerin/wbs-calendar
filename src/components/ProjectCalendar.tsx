@@ -13,6 +13,8 @@ import TaskModal from '@/components/TaskModal';
 import TaskPeekPanel from '@/components/TaskPeekPanel';
 import { useToast } from '@/components/Toast';
 import { useIsMobile } from '@/lib/useIsMobile';
+import { dayLabel } from '@/lib/mobileDrag';
+import type { DayRange } from '@/lib/monthStack';
 import type { Task, WbsNode, User, ProjectSummary } from '@/types';
 
 interface ProjectCalendarProps {
@@ -112,6 +114,21 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
     }
   }
 
+  // mobile long-press drop: save once, offer undo with the same update path
+  function handleMoveTask(taskId: string, next: DayRange, prev: DayRange) {
+    const name = tasks.find((t) => t.id === taskId)?.name ?? '작업';
+    handleUpdateTask(taskId, { start_date: next.start, end_date: next.end });
+    showToast({
+      message: `'${name}' ${dayLabel(next.start)}로 이동`,
+      actionLabel: '되돌리기',
+      onRetry: () => { hideToast(); handleUpdateTask(taskId, { start_date: prev.start, end_date: prev.end }); },
+    });
+  }
+
+  function openAddFor(date: string) {
+    setModalDefaultStart(date); setModalDefaultEnd(date); setModalOpen(true);
+  }
+
   function handleSaveTask(input: Omit<Task, 'id'>) {
     setModalOpen(false);
     insertTask({ ...input, id: crypto.randomUUID() });
@@ -177,6 +194,8 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
             setModalDefaultStart(start); setModalDefaultEnd(end); setModalOpen(true);
           }}
           onAddTask={() => { setModalDefaultStart(null); setModalDefaultEnd(null); setModalOpen(true); }}
+          onMoveTask={handleMoveTask}
+          onPickDate={openAddFor}
         />
       </div>
 
