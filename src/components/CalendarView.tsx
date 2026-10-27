@@ -6,12 +6,24 @@ import '@toast-ui/calendar/dist/toastui-calendar.min.css';
 import type { Task, WbsNode, User } from '@/types';
 import { getHolidays } from '@/lib/holidays';
 import { lighter80 } from '@/lib/color';
-import { maxStackDepth, monthWeeks } from '@/lib/monthStack';
+import { isoWeek, maxStackDepth, monthWeeks } from '@/lib/monthStack';
 import type { DayRange } from '@/lib/monthStack';
 import { useIsMobile } from '@/lib/useIsMobile';
 import { useLongPressDrag, NEW_CALENDAR_ID } from '@/components/useLongPressDrag';
 
 function pad(n: number) { return n.toString().padStart(2, '0'); }
+
+// Default date span, plus the ISO week of the row's Monday on Sundays
+const template = {
+  monthGridHeader: (m: any) => {
+    const cls = `toastui-calendar-weekday-grid-date${m.isToday ? ' toastui-calendar-weekday-grid-date-decorator' : ''}`;
+    const date = `<span class="${cls}">${Number(m.date.slice(8))}</span>`;
+    if (m.day !== 0) return date;
+    const mon = new Date(`${m.date}T00:00:00`);
+    mon.setDate(mon.getDate() + 1);
+    return `${date}<span class="week-number">W${isoWeek(`${mon.getFullYear()}-${pad(mon.getMonth() + 1)}-${pad(mon.getDate())}`)}</span>`;
+  },
+};
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -191,6 +203,7 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
               events={events}
               month={{ startDayOfWeek: 0, isAlways6Weeks: false, visibleEventCount: depth }}
               week={{ startDayOfWeek: 0 }}
+              template={template}
               usageStatistics={false}
               useDetailPopup={false}
               useFormPopup={false}

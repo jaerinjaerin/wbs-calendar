@@ -39,3 +39,11 @@ export function maxStackDepth(events: DayRange[], weeks: DayRange[]): number {
   }
   return max;
 }
+
+// ISO 8601 week number (Monday-start, week 1 holds the year's first Thursday)
+export function isoWeek(date: string): number {
+  const [y, m, d] = date.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d));
+  t.setUTCDate(t.getUTCDate() + 3 - ((t.getUTCDay() + 6) % 7)); // Thursday of this week
+  return 1 + Math.floor((t.getTime() - Date.UTC(t.getUTCFullYear(), 0, 1)) / (7 * 864e5));
+}

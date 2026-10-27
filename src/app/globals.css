@@ -128,3 +128,10 @@ body {
   color: theme('colors.error');
   font-weight: 600;
 }
+
+.week-number {
+  margin-left: 6px;
+  color: theme('colors.muted');
+  font-size: 10px;
+  font-weight: 500;
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { maxStackDepth, monthWeeks } from '../monthStack';
+import { isoWeek, maxStackDepth, monthWeeks } from '../monthStack';
 
 describe('monthWeeks', () => {
   it('covers the month with Sunday-start weeks', () => {
@@ -31,5 +31,14 @@ describe('maxStackDepth', () => {
 
   it('is 0 with no events', () => {
     expect(maxStackDepth([], week)).toBe(0);
+  });
+});
+
+describe('isoWeek', () => {
+  it('numbers weeks across year boundaries', () => {
+    expect(isoWeek('2026-10-26')).toBe(44);
+    expect(isoWeek('2026-12-31')).toBe(53);
+    expect(isoWeek('2027-01-04')).toBe(1);
+    expect(isoWeek('2027-01-01')).toBe(53); // Friday of 2026-W53
   });
 });
