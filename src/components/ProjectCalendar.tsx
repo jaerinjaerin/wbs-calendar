@@ -190,7 +190,10 @@ export default function ProjectCalendar({ project, projects, initial }: ProjectC
         {/* mobile: drops down from under the header; the outer box clips it while it's tucked away.
             desktop: an in-flow sidebar whose width animates to 0 when collapsed */}
         <div className="block fixed top-12 inset-x-0 bottom-0 z-40 overflow-hidden pointer-events-none md:pointer-events-auto md:contents">
-        <div className={`flex max-h-[70dvh] shadow-card transition-transform duration-[250ms] md:max-h-none md:shadow-none md:translate-y-0 md:transition-[width,visibility] md:overflow-hidden md:shrink-0 ${sidebarOpen ? 'translate-y-0 pointer-events-auto' : '-translate-y-full'} ${wbsCollapsed ? 'md:w-0 md:invisible' : 'md:w-[280px]'}`}>
+        <div className={`flex max-h-[70dvh] shadow-card transition-transform duration-[250ms] md:max-h-none md:shadow-none md:translate-y-0 md:transition-[width,visibility] md:overflow-hidden md:shrink-0 ${sidebarOpen ? 'translate-y-0 pointer-events-auto' : '-translate-y-full'} ${wbsCollapsed ? 'md:w-0 md:invisible' : 'md:w-[280px]'}`}
+          // Toast UI only re-measures on window resize, so nudge it once the sidebar has finished resizing
+          onTransitionEnd={(e) => { if (e.target === e.currentTarget && e.propertyName === 'width') window.dispatchEvent(new Event('resize')); }}
+        >
           <WbsTree
             projectId={projectId}
             wbsNodes={wbsNodes}
