@@ -92,6 +92,23 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
       import('@toast-ui/react-calendar').then((mod) => setCalendarComp(() => mod.default));
     }, []);
 
+    // Toast UI only re-measures on window resize. Anything else that changes this area's width
+    // (collapsing the sidebar) gets a synthetic resize, once per frame.
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      let width = el.clientWidth;
+      let frame = 0;
+      const ro = new ResizeObserver(() => {
+        if (el.clientWidth === width) return;
+        width = el.clientWidth;
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+      });
+      ro.observe(el);
+      return () => { ro.disconnect(); cancelAnimationFrame(frame); };
+    }, []);
+
     useImperativeHandle(ref, () => ({
       getContainerEl: () => containerRef.current,
       getInstance: () => calRef.current?.getInstance?.(),

@@ -8,6 +8,7 @@ import WbsTree from '@/components/WbsTree';
 import CalendarView from '@/components/CalendarView';
 import type { CalendarViewHandle } from '@/components/CalendarView';
 import ProjectHeader from '@/components/ProjectHeader';
+import { neujoh } from '@/app/fonts/neujoh';
 import { useExcelExport } from '@/components/useExcelExport';
 import TaskModal from '@/components/TaskModal';
 import TaskPeekPanel from '@/components/TaskPeekPanel';
@@ -175,7 +176,7 @@ export default function ProjectCalendar({ project, projects, initial }: ProjectC
   const excel = useExcelExport(filteredTasks(), wbsNodes, projectName);
 
   return (
-    <div className="flex flex-col h-dvh overflow-hidden">
+    <div className={`flex flex-col h-dvh overflow-hidden ${neujoh.variable}`}>
       <ProjectHeader
         project={project}
         projects={projects}
@@ -188,12 +189,10 @@ export default function ProjectCalendar({ project, projects, initial }: ProjectC
       {sidebarOpen && <div className="block md:hidden fixed inset-0 top-12 bg-black/30 z-[39]" onClick={() => setSidebarOpen(false)} />}
       <div className="flex flex-1 overflow-hidden">
         {/* mobile: drops down from under the header; the outer box clips it while it's tucked away.
-            desktop: an in-flow sidebar whose width animates to 0 when collapsed */}
+            desktop: an in-flow sidebar that is simply removed when collapsed (no width animation,
+            which iPad Safari's calendar didn't follow) */}
         <div className="block fixed top-12 inset-x-0 bottom-0 z-40 overflow-hidden pointer-events-none md:pointer-events-auto md:contents">
-        <div className={`flex max-h-[70dvh] shadow-card transition-transform duration-[250ms] md:max-h-none md:shadow-none md:translate-y-0 md:transition-[width,visibility] md:overflow-hidden md:shrink-0 ${sidebarOpen ? 'translate-y-0 pointer-events-auto' : '-translate-y-full'} ${wbsCollapsed ? 'md:w-0 md:invisible' : 'md:w-[280px]'}`}
-          // Toast UI only re-measures on window resize, so nudge it once the sidebar has finished resizing
-          onTransitionEnd={(e) => { if (e.target === e.currentTarget && e.propertyName === 'width') window.dispatchEvent(new Event('resize')); }}
-        >
+        <div className={`flex max-h-[70dvh] shadow-card transition-transform duration-[250ms] md:max-h-none md:shadow-none md:translate-y-0 md:w-[280px] md:shrink-0 ${sidebarOpen ? 'translate-y-0 pointer-events-auto' : '-translate-y-full'} ${wbsCollapsed ? 'md:hidden' : ''}`}>
           <WbsTree
             projectId={projectId}
             wbsNodes={wbsNodes}

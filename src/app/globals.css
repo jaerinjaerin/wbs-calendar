@@ -8,7 +8,7 @@ body {
 
 /* TUI Calendar — design system overrides */
 .toastui-calendar-layout {
-  font-family: theme('fontFamily.sans');
+  font-family: theme('fontFamily.neujoh');
 }
 
 .toastui-calendar-day-name__name,

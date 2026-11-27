@@ -185,7 +185,7 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
 
   return (
     <aside className="w-full md:w-[280px] md:shrink-0 bg-canvas md:border-r border-hairline flex flex-col overflow-hidden shrink-0">
-      <div className="p-md flex items-center justify-between border-b border-hairline-soft">
+      <div className="p-md flex items-center justify-between border-b border-hairline-soft font-neujoh">
         <div className="flex items-center gap-xs">
           {wbsNodes.length > 0 && (() => {
             // one switch for every category: checks all unless all are already checked
@@ -209,7 +209,7 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
         </div>
         <button className="w-[22px] h-[22px] rounded-xs border border-hairline bg-transparent cursor-pointer text-body-sm flex items-center justify-center" onClick={() => openAddPopup(null, 0)} aria-label="분류 추가" title="분류 추가" disabled={!!form}>+</button>
       </div>
-      <div className="flex-1 overflow-y-auto py-xs">
+      <div className="flex-1 overflow-y-auto py-xs font-neujoh">
         {tree.length === 0 ? (
           <div className="flex flex-col items-center gap-xxs px-md py-lg text-center">
             <p className="m-0 text-body-sm font-medium text-ink">아직 분류가 없어요</p>
