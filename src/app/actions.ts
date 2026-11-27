@@ -131,11 +131,12 @@ export async function deleteTask(id: string): Promise<ActionResult<null>> {
 
 // ---- categories ----
 
-export async function createWbsNode(node: Omit<WbsNode, 'id'>): Promise<ActionResult<null>> {
+// returns the new id so the task popup can select a category it just created
+export async function createWbsNode(node: Omit<WbsNode, 'id'>): Promise<ActionResult<{ id: string }>> {
   if (await limited('create')) return rateLimited();
   const clean = cleanNewWbsNode(node);
   if (!clean) return invalid();
-  return fromDb(await db.from('wbs_nodes').insert(clean));
+  return fromDb(await db.from('wbs_nodes').insert(clean).select('id').single());
 }
 
 // Color applies to the whole subtree; name only to the node. Pass only the fields that changed.

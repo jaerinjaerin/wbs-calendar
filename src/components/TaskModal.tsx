@@ -7,7 +7,12 @@ import WbsSelect from './WbsSelect';
 import BottomSheet from './BottomSheet';
 import { useIsMobile } from '@/lib/useIsMobile';
 import { groupCls, rowCls, labelCls, fieldCls, selectCls, statusCls, priorityCls } from './TaskPeekPanel';
-import { primaryBtn, secondaryBtn, modalOverlay } from '@/lib/styles';
+import { primaryBtn, secondaryBtn, modalOverlay, inputCls } from '@/lib/styles';
+import { COLOR_PRESETS } from '@/lib/color';
+
+const smallBtnBase = 'h-7 px-sm rounded-md border text-body-xs font-medium cursor-pointer whitespace-nowrap';
+const smallBtn = `${smallBtnBase} border-hairline bg-canvas text-ink`;
+const smallPrimaryBtn = `${smallBtnBase} border-primary bg-primary text-on-primary disabled:opacity-40 disabled:cursor-not-allowed`;
 
 interface TaskModalProps {
   wbsNodes: WbsNode[];
@@ -15,10 +20,19 @@ interface TaskModalProps {
   defaultStart: string | null;
   defaultEnd: string | null;
   onSave: (task: Omit<Task, 'id'>) => void;
+  onCreateNode: (name: string, color: string) => Promise<string | null>; // new root category's id, null on failure
   onClose: () => void;
 }
 
-export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, onSave, onClose }: TaskModalProps) {
+// "작업 이름과 분류가 비어 있어요": 과/와 and 이/가 follow whether the previous word ends in a final consonant
+const hasBatchim = (w: string) => (w.charCodeAt(w.length - 1) - 0xac00) % 28 !== 0;
+function missingMessage(fields: string[]): string {
+  const joined = fields.reduce((acc, w, i) =>
+    i === 0 ? w : `${acc}${i === fields.length - 1 ? (hasBatchim(fields[i - 1]) ? '과 ' : '와 ') : ', '}${w}`, '');
+  return `${joined}${hasBatchim(fields[fields.length - 1]) ? '이' : '가'} 비어 있어요`;
+}
+
+export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, onSave, onCreateNode, onClose }: TaskModalProps) {
   const mobile = useIsMobile();
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState(defaultStart ?? '');
@@ -33,6 +47,26 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
   const [pickedNodeId, setWbsNodeId] = useState('');
   const wbsNodeId = pickedNodeId || sortedNodes[0]?.id || ''; // nodes may arrive after the modal opens
   const submittedRef = useRef(false); // blocks double-click before the modal unmounts
+  const [showErrors, setShowErrors] = useState(false); // only after a blocked submit
+  // inline "+ 분류 추가" for a project with no categories yet
+  const [nodeForm, setNodeForm] = useState(false);
+  const [nodeName, setNodeName] = useState('');
+  const [nodeColor, setNodeColor] = useState(COLOR_PRESETS[0]);
+  const [creatingNode, setCreatingNode] = useState(false);
+
+  const missing = [!name.trim() && '작업 이름', !wbsNodeId && '분류', (!startDate || !endDate) && '기간'].filter(Boolean) as string[];
+  const nameErr = showErrors && !name.trim();
+  const nodeErr = showErrors && !wbsNodeId;
+
+  async function createNode() {
+    if (creatingNode || !nodeName.trim()) return;
+    setCreatingNode(true);
+    const id = await onCreateNode(nodeName.trim(), nodeColor);
+    setCreatingNode(false);
+    if (!id) return;
+    setWbsNodeId(id);
+    setNodeForm(false);
+  }
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -49,7 +83,8 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (submittedRef.current || !name.trim() || !startDate || !endDate || !wbsNodeId) return;
+    if (submittedRef.current) return;
+    if (missing.length > 0) { setShowErrors(true); return; }
     submittedRef.current = true;
     onSave({
       name: name.trim(),
@@ -72,11 +107,11 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
           <span className="w-1 rounded-xs my-xs shrink-0" style={{ background: color }} />
           <div className="flex-1 min-w-0 flex flex-col pb-xxs">
             <input
-              className={`${fieldCls} text-body-md font-semibold text-ink py-xs px-xxs w-full placeholder:text-muted-soft`}
+              className={`${fieldCls} text-body-md font-semibold text-ink py-xs px-xxs w-full ${nameErr ? 'placeholder:text-error' : 'placeholder:text-muted-soft'}`}
               placeholder="새로운 작업"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required
+              aria-invalid={nameErr}
               autoFocus={!mobile}
             />
             <label className={`${rowCls} cursor-pointer`}>
@@ -85,20 +120,63 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
             </label>
             <div className={rowCls}>
               <span className={labelCls}>시작</span>
-              <input type="date" className={`${fieldCls} ml-auto text-body-xs px-xxs`} value={startDate} onChange={(e) => changeStart(e.target.value)} required />
+              <input type="date" className={`${fieldCls} ml-auto text-body-xs px-xxs`} value={startDate} onChange={(e) => changeStart(e.target.value)} />
             </div>
             <div className={rowCls}>
               <span className={labelCls}>종료</span>
-              <input type="date" className={`${fieldCls} ml-auto text-body-xs px-xxs`} value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} required />
+              <input type="date" className={`${fieldCls} ml-auto text-body-xs px-xxs`} value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
           </div>
         </div>
 
         {/* attributes */}
         <div className={groupCls}>
-          <div className={rowCls}>
-            <WbsSelect nodes={wbsNodes} value={wbsNodeId} onChange={setWbsNodeId} />
-          </div>
+          {wbsNodes.length > 0 ? (
+            <div className={rowCls}>
+              <WbsSelect nodes={wbsNodes} value={wbsNodeId} onChange={setWbsNodeId} />
+            </div>
+          ) : nodeForm ? (
+            <div className="flex flex-col gap-xs py-sm">
+              <span className={labelCls}>새 분류</span>
+              <input
+                className={inputCls}
+                placeholder="이름 입력"
+                value={nodeName}
+                onChange={(e) => setNodeName(e.target.value)}
+                onKeyDown={(e) => {
+                  // Enter would submit the task form; Escape would close the whole popup
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); createNode(); }
+                  if (e.key === 'Escape') { e.stopPropagation(); setNodeForm(false); }
+                }}
+                autoFocus
+              />
+              <div className="flex gap-xs flex-wrap">
+                {COLOR_PRESETS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`w-6 h-6 rounded-full border-2 cursor-pointer ${nodeColor === c ? 'border-ink' : 'border-transparent'}`}
+                    style={{ background: c }}
+                    aria-label={`색상 ${c}`}
+                    aria-pressed={nodeColor === c}
+                    onClick={() => setNodeColor(c)}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-end gap-xs">
+                <button type="button" className={smallBtn} onClick={() => setNodeForm(false)}>취소</button>
+                <button type="button" className={smallPrimaryBtn} onClick={createNode} disabled={!nodeName.trim() || creatingNode}>
+                  {creatingNode ? '만드는 중…' : '분류 만들기'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={rowCls}>
+              <span className={`${labelCls} ${nodeErr ? 'text-error' : ''}`}>분류</span>
+              <span className={`flex-1 ${nodeErr ? 'text-error' : 'text-muted'}`}>{nodeErr ? '분류를 추가해 주세요' : '아직 분류가 없어요'}</span>
+              <button type="button" className={smallBtn} onClick={() => { setNodeForm(true); setNodeName(''); }}>+ 분류 추가</button>
+            </div>
+          )}
           <div className={rowCls}>
             <span className={labelCls}>담당자</span>
             <select className={`${selectCls} text-ink`} value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
@@ -147,6 +225,7 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
           </div>
         </div>
 
+        {showErrors && missing.length > 0 && <p role="alert" className="m-0 text-caption text-error">{missingMessage(missing)}</p>}
         <div className="flex justify-end gap-xs">
           <button type="button" className={secondaryBtn} onClick={onClose}>취소</button>
           <button type="submit" className={primaryBtn}>추가</button>
@@ -157,7 +236,7 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
   if (mobile) {
     return (
       <BottomSheet onClose={onClose}>
-        <form className="flex flex-col gap-sm" onSubmit={handleSubmit}>{fields}</form>
+        <form className="flex flex-col gap-sm" onSubmit={handleSubmit} noValidate>{fields}</form>
       </BottomSheet>
     );
   }
@@ -168,6 +247,7 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
         className="w-[calc(100%-32px)] max-w-[460px] bg-canvas rounded-lg shadow-card p-md flex flex-col gap-sm"
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
+        noValidate
       >
         {fields}
       </form>

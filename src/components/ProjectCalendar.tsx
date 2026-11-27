@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { loadProjectData, createTask, updateTask, deleteTask, updateWbsNode } from '@/app/actions';
+import { loadProjectData, createTask, updateTask, deleteTask, updateWbsNode, createWbsNode } from '@/app/actions';
 import { subtreeIds } from '@/lib/wbs';
 import { errorMessage } from '@/lib/actionResult';
 import WbsTree from '@/components/WbsTree';
@@ -125,6 +125,19 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
     });
   }
 
+  // the task popup's "+ 분류 추가": a root category, then reload so the popup can select it
+  async function createRootNode(name: string, color: string): Promise<string | null> {
+    const sortOrder = wbsNodes.filter((n) => !n.parent_id).length + 1;
+    const { data, error } = await createWbsNode({ project_id: projectId, parent_id: null, name, color, depth: 0, sort_order: sortOrder });
+    if (!data) {
+      console.error(error);
+      showToast({ message: errorMessage(error, '분류 추가에 실패했습니다') });
+      return null;
+    }
+    await loadData(projectId);
+    return data.id;
+  }
+
   function openAddFor(date: string) {
     setModalDefaultStart(date); setModalDefaultEnd(date); setModalOpen(true);
   }
@@ -206,6 +219,7 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
           defaultStart={modalDefaultStart}
           defaultEnd={modalDefaultEnd}
           onSave={handleSaveTask}
+          onCreateNode={createRootNode}
           onClose={() => setModalOpen(false)}
         />
       )}

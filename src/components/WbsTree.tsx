@@ -189,7 +189,13 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
         <button className="w-[22px] h-[22px] rounded-xs border border-hairline bg-transparent cursor-pointer text-body-sm flex items-center justify-center" onClick={() => openAddPopup(null, 0)} aria-label="분류 추가" title="분류 추가" disabled={!!form}>+</button>
       </div>
       <div className="flex-1 overflow-y-auto py-xs">
-        {tree.map(renderNode)}
+        {tree.length === 0 ? (
+          <div className="flex flex-col items-center gap-xxs px-md py-lg text-center">
+            <p className="m-0 text-body-sm font-medium text-ink">아직 분류가 없어요</p>
+            <p className="m-0 mb-sm text-body-xs text-muted">작업은 분류 안에 들어가요.<br />먼저 분류를 하나 만들어 주세요.</p>
+            <button className={primaryBtn} onClick={() => openAddPopup(null, 0)}>+ 분류 추가</button>
+          </div>
+        ) : tree.map(renderNode)}
       </div>
       {form && (
         <div className={modalOverlay} onClick={() => setForm(null)}>
