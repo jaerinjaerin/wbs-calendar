@@ -326,7 +326,10 @@ The footer flips to `{colors.surface-dark}` (#101010) — a deep near-black that
 
 ### Font Family
 
-> **WBS 캘린더 적용 규칙:** Cal Sans는 공개 웹폰트가 아니고 한글 글리프도 없어서 쓰지 않습니다. 디스플레이 텍스트(`font-display`)도 **Inter 600 + 음수 자간**으로 렌더링합니다(아래 "If Cal Sans is unavailable" 대체안). 이 문서의 Cal Sans 언급은 원본(Cal.com) 기준 설명입니다.
+> **WBS 캘린더 적용 규칙 (2026-11-27~):** 아래 Cal Sans/Inter 설명은 원본(Cal.com) 기준이며, 이 앱은 두 한글 폰트를 씁니다.
+> - **기본 텍스트 `font-sans` = S-Core Dream** — 400·500·600만 로드. 이 폰트는 굵기 이름이 한 단계 무거워서, `6Bold` 파일이 600(`font-semibold`)을 맡는다. 700(`font-bold`)은 따로 로드하지 않아 600으로 렌더링된다.
+> - **타이틀·강조 `font-display` = Paperozi(Paperlogy)** — 600 하나만 로드. 페이지 제목, 로고 텍스트처럼 한 화면에 몇 군데만 쓴다. 본문에는 쓰지 않는다.
+> - 두 폰트 모두 `src/app/fonts/`에 파일을 두고 `next/font/local`(`app/layout.tsx`)로 직접 호스팅한다. 새 굵기가 필요하면 파일을 추가하고 `layout.tsx`의 `src` 배열에 등록한다. CDN `@font-face`나 Google Fonts는 쓰지 않는다.
 
 The system runs **Cal Sans** for display + brand wordmark and **Inter** for everything else. Cal Sans is Cal.com's custom geometric display typeface — slightly condensed, weight 600, negative letter-spacing. Inter handles body, buttons, navigation, captions, and tabular code blocks. The fallback stack walks `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` for both families.
 

@@ -22,7 +22,7 @@
 
 ## 디자인시스템
 
-`DESIGN.md` (Cal.com 기반) — UI 작업 시 반드시 참조. Inter 폰트, #111111 primary, 8px rounded 버튼, 12px rounded 카드.
+`DESIGN.md` (Cal.com 기반) — UI 작업 시 반드시 참조. 본문 S-Core Dream·제목 Paperozi 폰트(직접 호스팅), #111111 primary, 8px rounded 버튼, 12px rounded 카드.
 
 ## 기술 스택
 
