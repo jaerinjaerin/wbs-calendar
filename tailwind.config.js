@@ -34,8 +34,8 @@ module.exports = {
         'badge-emerald': '#34d399',
       },
       fontFamily: {
-        // both self-hosted via next/font in app/layout.tsx — see DESIGN.md
-        display: ['var(--font-display)', 'var(--font-sans)', 'sans-serif'],
+        // one self-hosted family (app/layout.tsx); font-display marks titles, which are set at 600 — see DESIGN.md
+        display: ['var(--font-sans)', 'sans-serif'],
         sans: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },

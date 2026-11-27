@@ -326,10 +326,12 @@ The footer flips to `{colors.surface-dark}` (#101010) — a deep near-black that
 
 ### Font Family
 
-> **WBS 캘린더 적용 규칙 (2026-11-27~):** 아래 Cal Sans/Inter 설명은 원본(Cal.com) 기준이며, 이 앱은 두 한글 폰트를 씁니다.
-> - **기본 텍스트 `font-sans` = S-Core Dream** — 400·500·600만 로드. 이 폰트는 굵기 이름이 한 단계 무거워서, `6Bold` 파일이 600(`font-semibold`)을 맡는다. 700(`font-bold`)은 따로 로드하지 않아 600으로 렌더링된다.
-> - **타이틀·강조 `font-display` = Paperozi(Paperlogy)** — 600 하나만 로드. 페이지 제목, 로고 텍스트처럼 한 화면에 몇 군데만 쓴다. 본문에는 쓰지 않는다.
-> - 두 폰트 모두 `src/app/fonts/`에 파일을 두고 `next/font/local`(`app/layout.tsx`)로 직접 호스팅한다. 새 굵기가 필요하면 파일을 추가하고 `layout.tsx`의 `src` 배열에 등록한다. CDN `@font-face`나 Google Fonts는 쓰지 않는다.
+> **WBS 캘린더 적용 규칙 (2026-11-27~):** 아래 Cal Sans/Inter 설명은 원본(Cal.com) 기준이며, 이 앱은 **Paperozi(Paperlogy) 한 가족**만 쓰고 굵기로 위계를 나눕니다.
+> - **400** 본문·입력값, **500** 라벨·작업 막대·날짜, **600** 제목(`font-display`, title-*, 버튼). 이 세 굵기만 로드하므로 `font-bold`(700)는 600으로 렌더링된다. 700을 쓰지 말 것 — 파일이 없어 브라우저가 가짜 굵게를 만든다.
+> - 실제 파일은 한 단계 얇게 연결돼 있다: 400→Light, 500→Regular, 600→Medium (`app/layout.tsx`). 코드에서는 400·500·600 클래스를 그대로 쓴다.
+> - `font-sans`와 `font-display`는 같은 폰트다. `font-display`는 "제목"이라는 표시로만 남겨 둔다.
+> - 파일은 `src/app/fonts/`에 두고 `next/font/local`(`app/layout.tsx`)로 직접 호스팅한다. CDN `@font-face`나 Google Fonts는 쓰지 않는다.
+> - 모바일(<768px) 달력은 작업 막대·날짜·요일을 12px로 한 단계 줄인다(`globals.css`).
 
 The system runs **Cal Sans** for display + brand wordmark and **Inter** for everything else. Cal Sans is Cal.com's custom geometric display typeface — slightly condensed, weight 600, negative letter-spacing. Inter handles body, buttons, navigation, captions, and tabular code blocks. The fallback stack walks `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` for both families.
 

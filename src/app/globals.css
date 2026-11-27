@@ -71,7 +71,8 @@ body {
   font-weight: 500;
 }
 
-.toastui-calendar-weekday-event-title {
+/* Toast UI sets bold (700) with a longer selector; there is no 700 file, so it would render as faux bold */
+.toastui-calendar-layout .toastui-calendar-weekday-event-title {
   font-weight: 500;
 }
 
@@ -132,4 +133,13 @@ body {
   color: theme('colors.muted');
   font-size: 10px;
   font-weight: 500;
+}
+
+/* Mobile: calendar text one step smaller so more of each title fits in a day cell */
+@media (max-width: 767px) {
+  .toastui-calendar-weekday-event,
+  .toastui-calendar-weekday-grid-date,
+  .toastui-calendar-day-name__name {
+    font-size: 12px;
+  }
 }
