@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { loadProjectData, createTask, updateTask, deleteTask, updateWbsNode, createWbsNode } from '@/app/actions';
 import { subtreeIds } from '@/lib/wbs';
 import { errorMessage } from '@/lib/actionResult';
 import WbsTree from '@/components/WbsTree';
 import CalendarView from '@/components/CalendarView';
 import type { CalendarViewHandle } from '@/components/CalendarView';
-import ExportButtons from '@/components/ExportButtons';
+import ProjectHeader from '@/components/ProjectHeader';
+import { useExcelExport } from '@/components/useExcelExport';
 import TaskModal from '@/components/TaskModal';
 import TaskPeekPanel from '@/components/TaskPeekPanel';
 import { useToast } from '@/components/Toast';
@@ -19,12 +19,12 @@ import type { Task, WbsNode, User, ProjectSummary } from '@/types';
 
 interface ProjectCalendarProps {
   project: ProjectSummary;
+  projects: ProjectSummary[]; // for the header's project switcher
   initial: { tasks: Task[]; wbsNodes: WbsNode[]; users: User[] };
 }
 
 // Initial data comes from the server page; this only refetches after edits.
-export default function ProjectCalendar({ project, initial }: ProjectCalendarProps) {
-  const router = useRouter();
+export default function ProjectCalendar({ project, projects, initial }: ProjectCalendarProps) {
   const calendarRef = useRef<CalendarViewHandle>(null);
   const { id: projectId, name: projectName } = project;
   const [tasks, setTasks] = useState<Task[]>(initial.tasks);
@@ -162,29 +162,24 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
   }
 
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
+  const excel = useExcelExport(filteredTasks(), wbsNodes, projectName);
 
   return (
     <div className="flex flex-col h-dvh overflow-hidden">
-      <header className="flex items-center justify-between px-3 h-12 md:px-5 md:h-14 bg-surface-dark shrink-0">
-        <div className="flex items-center gap-xs md:gap-sm">
-          <button className="bg-transparent border-none text-on-dark text-body-md cursor-pointer px-xs py-xxs rounded-md hover:bg-surface-dark-elevated" onClick={() => router.push('/')} aria-label="프로젝트 목록">←</button>
-          <span className="font-display text-body-xs md:text-title-sm text-on-dark">WBS 캘린더</span>
-          <span className="text-on-dark-soft text-caption font-medium max-w-[100px] md:max-w-none truncate max-[480px]:hidden">{projectName}</span>
-        </div>
-        <div className="flex items-center gap-1.5 md:gap-xs">
-          <ExportButtons tasks={filteredTasks()} wbsNodes={wbsNodes} users={users} calendarRef={calendarRef} projectName={projectName} />
-          <button className="px-2.5 md:px-3.5 py-1.5 rounded-md text-micro md:text-body-xs font-medium border-none bg-surface-dark-elevated hover:bg-primary-active text-on-dark cursor-pointer" onClick={() => router.push(`/settings?project=${projectId}`)}>
-            설정
-          </button>
-          <button className="flex md:hidden w-9 h-9 rounded-md border border-white/10 bg-white/[0.08] text-on-dark text-lg cursor-pointer items-center justify-center" onClick={() => setSidebarOpen((v) => !v)} aria-label="WBS 메뉴">
-            ☰
-          </button>
-        </div>
-      </header>
+      <ProjectHeader
+        project={project}
+        projects={projects}
+        excel={excel}
+        wbsOpen={sidebarOpen}
+        onToggleWbs={() => setSidebarOpen((v) => !v)}
+      />
+      {excel.toastNode}
 
       {sidebarOpen && <div className="block md:hidden fixed inset-0 top-12 bg-black/30 z-[39]" onClick={() => setSidebarOpen(false)} />}
       <div className="flex flex-1 overflow-hidden">
-        <div className={`block fixed top-12 left-0 bottom-0 w-[280px] z-40 transition-transform duration-[250ms] md:contents ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        {/* mobile: drops down from under the header; the outer box clips it while it's tucked away. desktop: plain sidebar */}
+        <div className="block fixed top-12 inset-x-0 bottom-0 z-40 overflow-hidden pointer-events-none md:pointer-events-auto md:contents">
+        <div className={`flex max-h-[70dvh] shadow-card transition-transform duration-[250ms] md:contents ${sidebarOpen ? 'translate-y-0 pointer-events-auto' : '-translate-y-full'}`}>
           <WbsTree
             projectId={projectId}
             wbsNodes={wbsNodes}
@@ -194,6 +189,7 @@ export default function ProjectCalendar({ project, initial }: ProjectCalendarPro
             onDataChange={() => loadData(projectId)}
             onUpdateNode={handleUpdateWbsNode}
           />
+        </div>
         </div>
         <CalendarView
           ref={calendarRef}

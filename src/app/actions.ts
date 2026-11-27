@@ -87,6 +87,12 @@ export async function getProjectByName(name: string): Promise<ActionResult<Proje
   return fromDb(await db.from('projects').select('id, name').eq('name', name).maybeSingle());
 }
 
+// header project switcher: names only, newest first like the home page
+export async function listProjectNames(): Promise<ActionResult<ProjectSummary[]>> {
+  if (await limited('read')) return rateLimited();
+  return fromDb(await db.from('projects').select('id, name').order('created_at', { ascending: false }));
+}
+
 export async function getProject(id: string): Promise<ActionResult<ProjectSummary>> {
   if (await limited('read')) return rateLimited();
   if (!isUuid(id)) return invalid();

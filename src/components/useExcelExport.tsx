@@ -1,26 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import type { RefObject } from 'react';
-import type { Task, WbsNode, User } from '@/types';
-import type { CalendarViewHandle } from './CalendarView';
+import type { Task, WbsNode } from '@/types';
 import { useToast } from './Toast';
 
-interface ExportButtonsProps {
-  tasks: Task[];
-  wbsNodes: WbsNode[];
-  users: User[];
-  calendarRef: RefObject<CalendarViewHandle>;
-  projectName: string;
-}
-
-export default function ExportButtons({ tasks, wbsNodes, projectName }: ExportButtonsProps) {
+// Shared by the header icon (desktop) and the project menu item (mobile).
+export function useExcelExport(tasks: Task[], wbsNodes: WbsNode[], projectName: string) {
   const [busy, setBusy] = useState(false);
   const { showToast, toastNode } = useToast();
   const nodeIds = new Set(wbsNodes.map((n) => n.id));
   const empty = !tasks.some((t) => nodeIds.has(t.wbs_node_id));
 
-  async function handleExport() {
+  async function run() {
     setBusy(true);
     try {
       // dynamic import keeps exceljs out of the main bundle
@@ -43,17 +34,5 @@ export default function ExportButtons({ tasks, wbsNodes, projectName }: ExportBu
     }
   }
 
-  return (
-    <>
-      <button
-        className="px-2.5 md:px-3.5 py-1.5 rounded-md text-micro md:text-body-xs font-medium border-none bg-surface-dark-elevated hover:bg-primary-active text-on-dark cursor-pointer disabled:opacity-40 disabled:cursor-default"
-        disabled={empty || busy}
-        title={empty ? '내보낼 작업이 없습니다' : undefined}
-        onClick={handleExport}
-      >
-        {busy ? '내보내는 중…' : '엑셀'}
-      </button>
-      {toastNode}
-    </>
-  );
+  return { run, busy, empty, toastNode };
 }

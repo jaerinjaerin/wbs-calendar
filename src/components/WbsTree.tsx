@@ -183,7 +183,7 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
   }
 
   return (
-    <aside className="w-[280px] bg-canvas border-r border-hairline flex flex-col overflow-hidden shrink-0">
+    <aside className="w-full md:w-[280px] bg-canvas md:border-r border-hairline flex flex-col overflow-hidden shrink-0">
       <div className="p-md flex items-center justify-between border-b border-hairline-soft">
         <span className="text-body-xs font-semibold uppercase tracking-wider text-muted-soft">WBS</span>
         <button className="w-[22px] h-[22px] rounded-xs border border-hairline bg-transparent cursor-pointer text-body-sm flex items-center justify-center" onClick={() => openAddPopup(null, 0)} aria-label="분류 추가" title="분류 추가" disabled={!!form}>+</button>
