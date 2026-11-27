@@ -9,6 +9,7 @@ import { lighter80 } from '@/lib/color';
 import { isoWeek, maxStackDepth, monthWeeks } from '@/lib/monthStack';
 import type { DayRange } from '@/lib/monthStack';
 import { useIsMobile } from '@/lib/useIsMobile';
+import { useHasTouch } from '@/lib/useHasTouch';
 import { useLongPressDrag, NEW_CALENDAR_ID } from '@/components/useLongPressDrag';
 
 function pad(n: number) { return n.toString().padStart(2, '0'); }
@@ -146,9 +147,11 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
     // 31 day-name header; per row: 3 padding + 27 date bar + 26 per event + 4 slack
     const neededHeight = 31 + weeks.length * (34 + depth * 26);
 
+    // layout and Toast UI's mouse drag follow screen width; touch gestures follow the device, so an iPad gets both
     const mobile = useIsMobile();
+    const touch = useHasTouch();
     const overlay = useLongPressDrag({
-      enabled: mobile,
+      enabled: touch,
       containerRef,
       getInstance: () => calRef.current?.getInstance?.(),
       weeks,
@@ -186,9 +189,9 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
             </div>
           </div>
         </div>
-        <div ref={containerRef} className="relative flex-1 overflow-auto p-2 md:p-4 md:px-5 max-md:select-none max-md:[-webkit-touch-callout:none]" onMouseDown={(e) => { mouseDownPos.current = { x: e.clientX, y: e.clientY }; }}>
+        <div ref={containerRef} className={`relative flex-1 overflow-auto p-2 md:p-4 md:px-5 ${touch ? 'select-none [-webkit-touch-callout:none]' : ''}`} onMouseDown={(e) => { mouseDownPos.current = { x: e.clientX, y: e.clientY }; }}>
           {overlay?.box && <div className="absolute z-[1] pointer-events-none rounded-sm bg-accent/15 ring-2 ring-accent" style={overlay.box} />}
-          {mobile && (
+          {touch && (
             // iOS 18+ plays a haptic when a switch toggles; clicked from touchend only
             <label id="haptic-switch" aria-hidden="true" className="fixed -left-[9999px] opacity-0">
               <input type="checkbox" tabIndex={-1} {...{ switch: '' }} />
