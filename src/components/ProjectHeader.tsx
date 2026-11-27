@@ -112,7 +112,7 @@ export default function ProjectHeader({ project, projects, excel, onToggleWbs, w
       </div>
 
       <button
-        className={`${iconBtn} md:hidden ${wbsOpen ? 'bg-surface-dark-elevated' : ''}`}
+        className={`${iconBtn} ${wbsOpen ? 'bg-surface-dark-elevated' : ''}`}
         onClick={onToggleWbs}
         aria-label="분류 목록"
         aria-expanded={wbsOpen}

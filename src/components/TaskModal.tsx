@@ -20,7 +20,8 @@ interface TaskModalProps {
   defaultStart: string | null;
   defaultEnd: string | null;
   onSave: (task: Omit<Task, 'id'>) => void;
-  onCreateNode: (name: string, color: string) => Promise<string | null>; // new root category's id, null on failure
+  // creates a category (under parentId, or top-level when null) and returns its id; null on failure
+  onCreateNode: (name: string, color: string, parentId: string | null) => Promise<string | null>;
   onClose: () => void;
 }
 
@@ -48,8 +49,9 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
   const wbsNodeId = pickedNodeId || sortedNodes[0]?.id || ''; // nodes may arrive after the modal opens
   const submittedRef = useRef(false); // blocks double-click before the modal unmounts
   const [showErrors, setShowErrors] = useState(false); // only after a blocked submit
-  // inline "+ 분류 추가" for a project with no categories yet
+  // inline category form: "+ 분류 추가" when there are none, "+ 새 분류" in the dropdown otherwise
   const [nodeForm, setNodeForm] = useState(false);
+  const [nodeUnder, setNodeUnder] = useState(false); // false = top-level, true = under the selected category
   const [nodeName, setNodeName] = useState('');
   const [nodeColor, setNodeColor] = useState(COLOR_PRESETS[0]);
   const [creatingNode, setCreatingNode] = useState(false);
@@ -61,7 +63,8 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
   async function createNode() {
     if (creatingNode || !nodeName.trim()) return;
     setCreatingNode(true);
-    const id = await onCreateNode(nodeName.trim(), nodeColor);
+    const parentId = nodeUnder && selectedNode ? selectedNode.id : null;
+    const id = await onCreateNode(nodeName.trim(), nodeColor, parentId);
     setCreatingNode(false);
     if (!id) return;
     setWbsNodeId(id);
@@ -74,7 +77,14 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  const color = wbsNodes.find((n) => n.id === wbsNodeId)?.color ?? '#ccc';
+  const selectedNode = wbsNodes.find((n) => n.id === wbsNodeId);
+  const color = selectedNode?.color ?? '#ccc';
+
+  function openNodeForm() {
+    setNodeForm(true);
+    setNodeName('');
+    setNodeUnder(false);
+  }
 
   function changeStart(start: string) {
     setStartDate(start);
@@ -131,13 +141,25 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
 
         {/* attributes */}
         <div className={groupCls}>
-          {wbsNodes.length > 0 ? (
-            <div className={rowCls}>
-              <WbsSelect nodes={wbsNodes} value={wbsNodeId} onChange={setWbsNodeId} />
-            </div>
-          ) : nodeForm ? (
+          {nodeForm ? (
             <div className="flex flex-col gap-xs py-sm">
               <span className={labelCls}>새 분류</span>
+              {selectedNode && (
+                <div role="radiogroup" aria-label="새 분류 위치" className="flex rounded-md border border-hairline overflow-hidden text-body-xs">
+                  {[false, true].map((under) => (
+                    <button
+                      key={String(under)}
+                      type="button"
+                      role="radio"
+                      aria-checked={nodeUnder === under}
+                      className={`flex-1 min-w-0 truncate px-xs py-[5px] border-none cursor-pointer ${nodeUnder === under ? 'bg-primary text-on-primary' : 'bg-canvas text-ink'}`}
+                      onClick={() => setNodeUnder(under)}
+                    >
+                      {under ? `${selectedNode.name} 아래` : '최상위'}
+                    </button>
+                  ))}
+                </div>
+              )}
               <input
                 className={inputCls}
                 placeholder="이름 입력"
@@ -150,7 +172,8 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
                 }}
                 autoFocus
               />
-              <div className="flex gap-xs flex-wrap">
+              {/* a sub-category takes its parent's color, like the sidebar */}
+              {!nodeUnder && <div className="flex gap-xs flex-wrap">
                 {COLOR_PRESETS.map((c) => (
                   <button
                     key={c}
@@ -162,7 +185,7 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
                     onClick={() => setNodeColor(c)}
                   />
                 ))}
-              </div>
+              </div>}
               <div className="flex justify-end gap-xs">
                 <button type="button" className={smallBtn} onClick={() => setNodeForm(false)}>취소</button>
                 <button type="button" className={smallPrimaryBtn} onClick={createNode} disabled={!nodeName.trim() || creatingNode}>
@@ -170,11 +193,15 @@ export default function TaskModal({ wbsNodes, users, defaultStart, defaultEnd, o
                 </button>
               </div>
             </div>
+          ) : wbsNodes.length > 0 ? (
+            <div className={rowCls}>
+              <WbsSelect nodes={wbsNodes} value={wbsNodeId} onChange={setWbsNodeId} onAddNew={openNodeForm} />
+            </div>
           ) : (
             <div className={rowCls}>
               <span className={`${labelCls} ${nodeErr ? 'text-error' : ''}`}>분류</span>
               <span className={`flex-1 ${nodeErr ? 'text-error' : 'text-muted'}`}>{nodeErr ? '분류를 추가해 주세요' : '아직 분류가 없어요'}</span>
-              <button type="button" className={smallBtn} onClick={() => { setNodeForm(true); setNodeName(''); }}>+ 분류 추가</button>
+              <button type="button" className={smallBtn} onClick={openNodeForm}>+ 분류 추가</button>
             </div>
           )}
           <div className={rowCls}>

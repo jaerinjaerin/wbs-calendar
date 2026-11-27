@@ -9,7 +9,7 @@ const Badge = ({ color }: { color: string }) => (
 );
 
 // native <option> can't render color badges, so this is a minimal custom dropdown
-export default function WbsSelect({ nodes, value, onChange }: { nodes: WbsNode[]; value: string; onChange: (id: string) => void }) {
+export default function WbsSelect({ nodes, value, onChange, onAddNew }: { nodes: WbsNode[]; value: string; onChange: (id: string) => void; onAddNew?: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const sorted = useMemo(() => flattenHierarchical(nodes), [nodes]);
@@ -53,6 +53,16 @@ export default function WbsSelect({ nodes, value, onChange }: { nodes: WbsNode[]
               {n.id === value && <span className="text-micro">✓</span>}
             </li>
           ))}
+          {onAddNew && (
+            <li
+              role="option"
+              aria-selected={false}
+              className="mt-xxs border-t border-hairline py-1.5 px-xs text-body-xs font-medium text-ink cursor-pointer hover:bg-surface-card"
+              onClick={() => { setOpen(false); onAddNew(); }}
+            >
+              + 새 분류
+            </li>
+          )}
         </ul>
       )}
     </div>

@@ -36,7 +36,8 @@ export default function ProjectCalendar({ project, projects, initial }: ProjectC
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDefaultStart, setModalDefaultStart] = useState<string | null>(null);
   const [modalDefaultEnd, setModalDefaultEnd] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drop-down panel
+  const [wbsCollapsed, setWbsCollapsed] = useState(false); // desktop sidebar
   const [popoverRect, setPopoverRect] = useState<DOMRect | null>(null);
   const { showToast, hideToast, toastNode } = useToast();
   const mobile = useIsMobile();
@@ -125,10 +126,19 @@ export default function ProjectCalendar({ project, projects, initial }: ProjectC
     });
   }
 
-  // the task popup's "+ 분류 추가": a root category, then reload so the popup can select it
-  async function createRootNode(name: string, color: string): Promise<string | null> {
-    const sortOrder = wbsNodes.filter((n) => !n.parent_id).length + 1;
-    const { data, error } = await createWbsNode({ project_id: projectId, parent_id: null, name, color, depth: 0, sort_order: sortOrder });
+  // the task popup's new-category form, then reload so the popup can select it.
+  // Same rules as the sidebar: last among its siblings, and a child takes its parent's color.
+  async function createNodeFromPopup(name: string, color: string, parentId: string | null): Promise<string | null> {
+    const parent = parentId ? wbsNodes.find((n) => n.id === parentId) : undefined;
+    const sortOrder = wbsNodes.filter((n) => n.parent_id === (parent?.id ?? null)).length + 1;
+    const { data, error } = await createWbsNode({
+      project_id: projectId,
+      parent_id: parent?.id ?? null,
+      name,
+      color: parent?.color ?? color,
+      depth: parent ? parent.depth + 1 : 0,
+      sort_order: sortOrder,
+    });
     if (!data) {
       console.error(error);
       showToast({ message: errorMessage(error, '분류 추가에 실패했습니다') });
@@ -170,22 +180,24 @@ export default function ProjectCalendar({ project, projects, initial }: ProjectC
         project={project}
         projects={projects}
         excel={excel}
-        wbsOpen={sidebarOpen}
-        onToggleWbs={() => setSidebarOpen((v) => !v)}
+        wbsOpen={mobile ? sidebarOpen : !wbsCollapsed}
+        onToggleWbs={() => (mobile ? setSidebarOpen((v) => !v) : setWbsCollapsed((v) => !v))}
       />
       {excel.toastNode}
 
       {sidebarOpen && <div className="block md:hidden fixed inset-0 top-12 bg-black/30 z-[39]" onClick={() => setSidebarOpen(false)} />}
       <div className="flex flex-1 overflow-hidden">
-        {/* mobile: drops down from under the header; the outer box clips it while it's tucked away. desktop: plain sidebar */}
+        {/* mobile: drops down from under the header; the outer box clips it while it's tucked away.
+            desktop: an in-flow sidebar whose width animates to 0 when collapsed */}
         <div className="block fixed top-12 inset-x-0 bottom-0 z-40 overflow-hidden pointer-events-none md:pointer-events-auto md:contents">
-        <div className={`flex max-h-[70dvh] shadow-card transition-transform duration-[250ms] md:contents ${sidebarOpen ? 'translate-y-0 pointer-events-auto' : '-translate-y-full'}`}>
+        <div className={`flex max-h-[70dvh] shadow-card transition-transform duration-[250ms] md:max-h-none md:shadow-none md:translate-y-0 md:transition-[width,visibility] md:overflow-hidden md:shrink-0 ${sidebarOpen ? 'translate-y-0 pointer-events-auto' : '-translate-y-full'} ${wbsCollapsed ? 'md:w-0 md:invisible' : 'md:w-[280px]'}`}>
           <WbsTree
             projectId={projectId}
             wbsNodes={wbsNodes}
             tasks={tasks}
             hiddenIds={hiddenIds}
             onToggleNode={toggleNode}
+            onSetAllVisible={(visible) => setHiddenIds(visible ? new Set() : new Set(wbsNodes.map((n) => n.id)))}
             onDataChange={() => loadData(projectId)}
             onUpdateNode={handleUpdateWbsNode}
           />
@@ -215,7 +227,7 @@ export default function ProjectCalendar({ project, projects, initial }: ProjectC
           defaultStart={modalDefaultStart}
           defaultEnd={modalDefaultEnd}
           onSave={handleSaveTask}
-          onCreateNode={createRootNode}
+          onCreateNode={createNodeFromPopup}
           onClose={() => setModalOpen(false)}
         />
       )}

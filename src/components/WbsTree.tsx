@@ -20,12 +20,13 @@ interface WbsTreeProps {
   tasks: Task[];
   hiddenIds: Set<string>;
   onToggleNode: (id: string) => void;
+  onSetAllVisible: (visible: boolean) => void;
   onDataChange: () => Promise<void>;
   onUpdateNode: (id: string, changes: { name?: string; color?: string }) => void;
 }
 
 // Renders the parent's data; after an edit the parent's reload refreshes it.
-export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggleNode, onDataChange, onUpdateNode }: WbsTreeProps) {
+export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggleNode, onSetAllVisible, onDataChange, onUpdateNode }: WbsTreeProps) {
   const tree = useMemo(() => {
     const counts: Record<string, number> = {};
     tasks.forEach(({ wbs_node_id }) => { counts[wbs_node_id] = (counts[wbs_node_id] ?? 0) + 1; });
@@ -183,9 +184,29 @@ export default function WbsTree({ projectId, wbsNodes, tasks, hiddenIds, onToggl
   }
 
   return (
-    <aside className="w-full md:w-[280px] bg-canvas md:border-r border-hairline flex flex-col overflow-hidden shrink-0">
+    <aside className="w-full md:w-[280px] md:shrink-0 bg-canvas md:border-r border-hairline flex flex-col overflow-hidden shrink-0">
       <div className="p-md flex items-center justify-between border-b border-hairline-soft">
-        <span className="text-body-xs font-semibold uppercase tracking-wider text-muted-soft">WBS</span>
+        <div className="flex items-center gap-xs">
+          {wbsNodes.length > 0 && (() => {
+            // one switch for every category: checks all unless all are already checked
+            const shown = wbsNodes.filter((n) => !hiddenIds.has(n.id)).length;
+            const all = shown === wbsNodes.length;
+            const label = all ? '전체 해제' : '전체 선택';
+            return (
+              <button
+                role="checkbox"
+                aria-checked={all ? true : shown === 0 ? false : 'mixed'}
+                aria-label={label}
+                title={label}
+                className={`w-4 h-4 rounded-xs shrink-0 border-2 border-ink flex items-center justify-center text-micro font-bold leading-none cursor-pointer p-0 ${shown > 0 ? 'bg-ink text-on-primary' : 'bg-transparent'}`}
+                onClick={() => onSetAllVisible(!all)}
+              >
+                {all ? '✓' : shown > 0 ? '–' : ''}
+              </button>
+            );
+          })()}
+          <span className="text-body-xs font-semibold uppercase tracking-wider text-muted-soft">WBS</span>
+        </div>
         <button className="w-[22px] h-[22px] rounded-xs border border-hairline bg-transparent cursor-pointer text-body-sm flex items-center justify-center" onClick={() => openAddPopup(null, 0)} aria-label="분류 추가" title="분류 추가" disabled={!!form}>+</button>
       </div>
       <div className="flex-1 overflow-y-auto py-xs">
