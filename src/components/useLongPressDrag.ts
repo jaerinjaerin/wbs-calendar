@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { DayRange } from '@/lib/monthStack';
-import { cellAtPoint, moveRange, daysBetween, dayLabel } from '@/lib/mobileDrag';
+import { cellAtPoint, moveRange, daysBetween, dayLabel, WEEKDAYS } from '@/lib/mobileDrag';
 
 const HOLD_MS = 450;
 const SLOP = 10;
@@ -62,7 +62,7 @@ export function useLongPressDrag(opts: LongPressOptions): DragOverlay | null {
     function boxOf(rowIndex: number, col: number) {
       const r = rows()[rowIndex];
       const c = container!.getBoundingClientRect();
-      const w = r.width / 7;
+      const w = r.width / WEEKDAYS.length;
       return { left: r.left - c.left + container!.scrollLeft + w * col, top: r.top - c.top + container!.scrollTop, width: w, height: r.height };
     }
 

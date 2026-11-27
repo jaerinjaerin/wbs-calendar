@@ -67,3 +67,6 @@ export function subtreeIds(nodes: Pick<WbsNode, 'id' | 'parent_id'>[], id: strin
   }
   return ids;
 }
+
+// Desktop sidebar collapsed state, read by the server page so the first render has the right calendar width
+export const WBS_COLLAPSED_COOKIE = 'wbs-collapsed';

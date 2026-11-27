@@ -332,7 +332,7 @@ The footer flips to `{colors.surface-dark}` (#101010) — a deep near-black that
 > - `font-sans`와 `font-display`는 같은 폰트다. `font-display`는 "제목"이라는 표시로만 남겨 둔다.
 > - 파일은 `src/app/fonts/`에 두고 `next/font/local`(`app/layout.tsx`)로 직접 호스팅한다. CDN `@font-face`나 Google Fonts는 쓰지 않는다.
 > - 모바일(<768px) 달력은 작업 막대·날짜·요일을 12px로 한 단계 줄인다(`globals.css`).
-> - **예외: 사이드패널(분류 목록)과 달력 칸 안 글자는 느좋체(`font-neujoh`)**. R(400)·B(700) 두 파일이며, 500 이하는 R, 600 이상은 B로 보인다. 파일이 커서(각 ~800KB) `app/fonts/neujoh.ts`에서 정의하고 캘린더 화면에서만 불러온다. 사이드패널 안의 분류 추가·삭제 창과 달력 위 월 제목은 Paperozi 그대로다.
+> - **예외: 사이드패널(분류 목록)과 달력 칸 안 글자는 Pretendard(`font-pretendard`)**. 400·500·600 세 굵기, KS X 1001 서브셋(상용 한글 2,350자 + 라틴, 굵기당 ~270KB)이다. 서브셋에 없는 드문 글자는 Paperozi로 보인다. `app/fonts/pretendard.ts`에서 정의하고 캘린더 화면에서만 불러온다. 사이드패널 안의 분류 추가·삭제 창과 달력 위 월 제목은 Paperozi 그대로다.
 
 The system runs **Cal Sans** for display + brand wordmark and **Inter** for everything else. Cal Sans is Cal.com's custom geometric display typeface — slightly condensed, weight 600, negative letter-spacing. Inter handles body, buttons, navigation, captions, and tabular code blocks. The fallback stack walks `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` for both families.
 

@@ -36,8 +36,8 @@ module.exports = {
       fontFamily: {
         // one self-hosted family (app/layout.tsx); font-display marks titles, which are set at 600 — see DESIGN.md
         display: ['var(--font-sans)', 'sans-serif'],
-        // 느좋체: sidebar and calendar grid only; the variable is set on the calendar page (app/fonts/neujoh.ts)
-        neujoh: ['var(--font-neujoh)', 'var(--font-sans)', 'sans-serif'],
+        // Pretendard: sidebar and calendar grid only; the variable is set on the calendar page (app/fonts/pretendard.ts)
+        pretendard: ['var(--font-pretendard)', 'var(--font-sans)', 'sans-serif'],
         sans: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },

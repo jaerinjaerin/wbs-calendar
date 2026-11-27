@@ -7,6 +7,7 @@ import type { Task, WbsNode, User } from '@/types';
 import { getHolidays } from '@/lib/holidays';
 import { lighter80 } from '@/lib/color';
 import { isoWeek, maxStackDepth, monthWeeks } from '@/lib/monthStack';
+import { addDays } from '@/lib/mobileDrag';
 import type { DayRange } from '@/lib/monthStack';
 import { useIsMobile } from '@/lib/useIsMobile';
 import { useHasTouch } from '@/lib/useHasTouch';
@@ -19,10 +20,9 @@ const template = {
   monthGridHeader: (m: any) => {
     const cls = `toastui-calendar-weekday-grid-date${m.isToday ? ' toastui-calendar-weekday-grid-date-decorator' : ''}`;
     const date = `<span class="${cls}">${Number(m.date.slice(8))}</span>`;
-    if (m.day !== 0) return date;
-    const mon = new Date(`${m.date}T00:00:00`);
-    mon.setDate(mon.getDate() + 1);
-    return `${date}<span class="week-number">W${isoWeek(`${mon.getFullYear()}-${pad(mon.getMonth() + 1)}-${pad(mon.getDate())}`)}</span>`;
+    // weekends are hidden, so the week number sits on Monday, the first column
+    if (m.day !== 1) return date;
+    return `${date}<span class="week-number">W${isoWeek(m.date)}</span>`;
   },
 };
 
@@ -160,7 +160,8 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
     // Show every stacked event instead of "+N": cap = deepest stack this month, and
     // rows grow tall enough to hold it (wrapper scrolls). Toast UI rows share one height.
     const weeks = monthWeeks(viewMonth.y, viewMonth.m);
-    const depth = maxStackDepth(events, weeks);
+    // only Mon–Fri is shown, so weekend-only events don't make rows taller
+    const depth = maxStackDepth(events, weeks.map((w) => ({ start: addDays(w.start, 1), end: addDays(w.end, -1) })));
     // 31 day-name header; per row: 3 padding + 27 date bar + 26 per event + 4 slack
     const neededHeight = 31 + weeks.length * (34 + depth * 26);
 
@@ -221,7 +222,7 @@ const CalendarView = forwardRef<CalendarViewHandle, CalendarViewProps>(
               view="month"
               calendars={calendars}
               events={events}
-              month={{ startDayOfWeek: 0, isAlways6Weeks: false, visibleEventCount: depth }}
+              month={{ startDayOfWeek: 0, isAlways6Weeks: false, visibleEventCount: depth, workweek: true }}
               week={{ startDayOfWeek: 0 }}
               template={template}
               usageStatistics={false}

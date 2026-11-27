@@ -8,7 +8,7 @@ body {
 
 /* TUI Calendar — design system overrides */
 .toastui-calendar-layout {
-  font-family: theme('fontFamily.neujoh');
+  font-family: theme('fontFamily.pretendard');
 }
 
 .toastui-calendar-day-name__name,
@@ -30,15 +30,6 @@ body {
 }
 
 .toastui-calendar-holiday {
-  color: theme('colors.error');
-}
-
-.toastui-calendar-day-name-item:first-child .toastui-calendar-day-name__name,
-.toastui-calendar-day-name-item:first-child .toastui-calendar-day-name__date {
-  color: theme('colors.error');
-}
-
-.toastui-calendar-weekday-grid .toastui-calendar-daygrid-cell:nth-child(7n + 1) .toastui-calendar-weekday-grid-date {
   color: theme('colors.error');
 }
 

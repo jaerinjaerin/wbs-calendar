@@ -2,13 +2,13 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { loadProjectData, createTask, updateTask, deleteTask, updateWbsNode, createWbsNode } from '@/app/actions';
-import { subtreeIds } from '@/lib/wbs';
+import { subtreeIds, WBS_COLLAPSED_COOKIE } from '@/lib/wbs';
 import { errorMessage } from '@/lib/actionResult';
 import WbsTree from '@/components/WbsTree';
 import CalendarView from '@/components/CalendarView';
 import type { CalendarViewHandle } from '@/components/CalendarView';
 import ProjectHeader from '@/components/ProjectHeader';
-import { neujoh } from '@/app/fonts/neujoh';
+import { pretendard } from '@/app/fonts/pretendard';
 import { useExcelExport } from '@/components/useExcelExport';
 import TaskModal from '@/components/TaskModal';
 import TaskPeekPanel from '@/components/TaskPeekPanel';
@@ -22,10 +22,11 @@ interface ProjectCalendarProps {
   project: ProjectSummary;
   projects: ProjectSummary[]; // for the header's project switcher
   initial: { tasks: Task[]; wbsNodes: WbsNode[]; users: User[] };
+  initialWbsCollapsed: boolean; // desktop sidebar, from the cookie
 }
 
 // Initial data comes from the server page; this only refetches after edits.
-export default function ProjectCalendar({ project, projects, initial }: ProjectCalendarProps) {
+export default function ProjectCalendar({ project, projects, initial, initialWbsCollapsed }: ProjectCalendarProps) {
   const calendarRef = useRef<CalendarViewHandle>(null);
   const { id: projectId, name: projectName } = project;
   const [tasks, setTasks] = useState<Task[]>(initial.tasks);
@@ -38,7 +39,14 @@ export default function ProjectCalendar({ project, projects, initial }: ProjectC
   const [modalDefaultStart, setModalDefaultStart] = useState<string | null>(null);
   const [modalDefaultEnd, setModalDefaultEnd] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drop-down panel
-  const [wbsCollapsed, setWbsCollapsed] = useState(false); // desktop sidebar
+  const [wbsCollapsed, setWbsCollapsed] = useState(initialWbsCollapsed); // desktop sidebar
+
+  // remembered across reloads (and projects) so the server renders it collapsed from the start
+  function toggleWbsCollapsed() {
+    const next = !wbsCollapsed;
+    setWbsCollapsed(next);
+    document.cookie = `${WBS_COLLAPSED_COOKIE}=${next ? '1' : '0'}; path=/; max-age=31536000; samesite=lax`;
+  }
   const [popoverRect, setPopoverRect] = useState<DOMRect | null>(null);
   const { showToast, hideToast, toastNode } = useToast();
   const mobile = useIsMobile();
@@ -176,13 +184,13 @@ export default function ProjectCalendar({ project, projects, initial }: ProjectC
   const excel = useExcelExport(filteredTasks(), wbsNodes, projectName);
 
   return (
-    <div className={`flex flex-col h-dvh overflow-hidden ${neujoh.variable}`}>
+    <div className={`flex flex-col h-dvh overflow-hidden ${pretendard.variable}`}>
       <ProjectHeader
         project={project}
         projects={projects}
         excel={excel}
         wbsOpen={mobile ? sidebarOpen : !wbsCollapsed}
-        onToggleWbs={() => (mobile ? setSidebarOpen((v) => !v) : setWbsCollapsed((v) => !v))}
+        onToggleWbs={() => (mobile ? setSidebarOpen((v) => !v) : toggleWbsCollapsed())}
       />
       {excel.toastNode}
 

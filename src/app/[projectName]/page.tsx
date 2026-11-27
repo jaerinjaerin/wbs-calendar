@@ -1,7 +1,9 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { getProjectByName, loadProjectData, listProjectNames } from '@/app/actions';
 import { errorMessage } from '@/lib/actionResult';
 import ProjectCalendar from '@/components/ProjectCalendar';
+import { WBS_COLLAPSED_COOKIE } from '@/lib/wbs';
 
 // Server-rendered so project + calendar data arrive with the HTML instead of three serial server actions.
 export default async function ProjectCalendarPage({ params }: { params: { projectName: string } }) {
@@ -14,7 +16,9 @@ export default async function ProjectCalendarPage({ params }: { params: { projec
   if (!data.data) return <Message text={errorMessage(data.error, '데이터를 불러오지 못했습니다')} />;
 
   // a failed switcher list only hides the other projects; the calendar still works
-  return <ProjectCalendar project={project.data} projects={others.data ?? [project.data]} initial={data.data} />;
+  // the sidebar's collapsed state lives in a cookie so the first render already has the right calendar width
+  const wbsCollapsed = cookies().get(WBS_COLLAPSED_COOKIE)?.value === '1';
+  return <ProjectCalendar project={project.data} projects={others.data ?? [project.data]} initial={data.data} initialWbsCollapsed={wbsCollapsed} />;
 }
 
 function Message({ text }: { text: string }) {

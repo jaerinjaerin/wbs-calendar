@@ -24,16 +24,20 @@ export function moveRange(range: DayRange, grab: string, over: string): DayRange
   return { start: addDays(range.start, n), end: addDays(range.end, n) };
 }
 
+// The calendar shows Monday–Friday only (month.workweek): column i is weeks[n].start (a Sunday) + WEEKDAYS[i] days.
+export const WEEKDAYS = [1, 2, 3, 4, 5];
+
 // Geometry, not elementFromPoint: event bars sit on top of the cells and hide the date.
 // rows[i] is the rect of week row i, weeks[i] its date range (Sunday start).
 // clip = the scroll container's visible rect; rows scrolled out of it still have screen rects (under the header).
-export function cellAtPoint(x: number, y: number, rows: RectLike[], weeks: DayRange[], clip?: RectLike): Cell | null {
+// days = which days of the week the columns show, as offsets from Sunday.
+export function cellAtPoint(x: number, y: number, rows: RectLike[], weeks: DayRange[], clip?: RectLike, days: number[] = WEEKDAYS): Cell | null {
   if (clip && (x < clip.left || x >= clip.left + clip.width || y < clip.top || y >= clip.top + clip.height)) return null;
   for (let i = 0; i < rows.length && i < weeks.length; i++) {
     const r = rows[i];
     if (x < r.left || x >= r.left + r.width || y < r.top || y >= r.top + r.height) continue;
-    const col = Math.min(6, Math.floor((x - r.left) / (r.width / 7)));
-    return { date: addDays(weeks[i].start, col), rowIndex: i, col };
+    const col = Math.min(days.length - 1, Math.floor((x - r.left) / (r.width / days.length)));
+    return { date: addDays(weeks[i].start, days[col]), rowIndex: i, col };
   }
   return null;
 }

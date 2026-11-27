@@ -35,17 +35,24 @@ describe('moveRange (grab-point)', () => {
 describe('cellAtPoint', () => {
   const weeks = monthWeeks(2026, 9); // Oct 2026: rows start 09-27, 10-04, 10-11, 10-18, 10-25
   const rows = weeks.map((_, i) => ({ left: 10, top: 100 + i * 50, width: 350, height: 50 })); // 50px per column
+  const ALL = [0, 1, 2, 3, 4, 5, 6]; // the 7-day cases below
 
   it('maps a point to row and column', () => {
-    expect(cellAtPoint(10 + 50 * 2 + 1, 100 + 50 * 3 + 10, rows, weeks)).toEqual({ date: '2026-10-20', rowIndex: 3, col: 2 });
+    expect(cellAtPoint(10 + 50 * 2 + 1, 100 + 50 * 3 + 10, rows, weeks, undefined, ALL)).toEqual({ date: '2026-10-20', rowIndex: 3, col: 2 });
   });
 
   it('returns out-of-month dates in the first row', () => {
-    expect(cellAtPoint(11, 101, rows, weeks)).toEqual({ date: '2026-09-27', rowIndex: 0, col: 0 });
+    expect(cellAtPoint(11, 101, rows, weeks, undefined, ALL)).toEqual({ date: '2026-09-27', rowIndex: 0, col: 0 });
   });
 
   it('clamps the right edge to Saturday', () => {
-    expect(cellAtPoint(10 + 349.9, 101, rows, weeks)?.col).toBe(6);
+    expect(cellAtPoint(10 + 349.9, 101, rows, weeks, undefined, ALL)?.col).toBe(6);
+  });
+
+  it('maps Mon–Fri columns by default (weekends hidden)', () => {
+    // 350px / 5 = 70px per column; row 3 starts Sun 10-18
+    expect(cellAtPoint(10 + 1, 100 + 50 * 3 + 10, rows, weeks)).toEqual({ date: '2026-10-19', rowIndex: 3, col: 0 });
+    expect(cellAtPoint(10 + 349.9, 100 + 50 * 3 + 10, rows, weeks)).toEqual({ date: '2026-10-23', rowIndex: 3, col: 4 });
   });
 
   it('is null outside the grid', () => {
