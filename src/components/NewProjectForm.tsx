@@ -87,8 +87,12 @@ export default function NewProjectForm({ hasProjects }: { hasProjects: boolean }
 
   return (
     <>
-      <button className={`${secondaryBtn} mt-lg`} onClick={() => setShowForm(true)}>
-        + 새 프로젝트
+      <button
+        className="flex items-center gap-xxs mt-sm py-xs text-body-sm text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-sm"
+        onClick={() => setShowForm(true)}
+      >
+        <span aria-hidden="true" className="text-body-md">+</span>
+        새 프로젝트
       </button>
       {showForm && (
         <div role="dialog" aria-modal="true" className={modalOverlay} onClick={() => setShowForm(false)}>

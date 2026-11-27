@@ -8,7 +8,8 @@ import { hashPin } from '@/lib/auth';
 import { subtreeIds } from '@/lib/wbs';
 import { ok, fail, fromDb, type ActionResult } from '@/lib/actionResult';
 import { isUuid, isColor, cleanName, cleanPassword, cleanNewTask, cleanTaskChanges, cleanNewWbsNode } from '@/lib/validate';
-import type { Task, WbsNode, User, ProjectSummary } from '@/types';
+import type { Task, WbsNode, User, ProjectSummary, TaskStatus } from '@/types';
+import { buildOverview, overviewWindow, seoulToday, type ProjectOverview } from '@/lib/projectOverview';
 
 // Every action: rate limit → validate → query. Results mirror supabase-js ({ data, error }).
 
@@ -41,9 +42,25 @@ async function tasksOf(nodeIds: string[]) {
 
 // ---- projects ----
 
-export async function listProjects(): Promise<ActionResult<ProjectSummary[]>> {
+export type ProjectCard = ProjectSummary & { overview: ProjectOverview };
+
+// Home page cards: each project with its tasks from this month/week, in one embedded query.
+export async function listProjects(): Promise<ActionResult<ProjectCard[]>> {
   if (await limited('read')) return rateLimited();
-  return fromDb(await db.from('projects').select('id, name').order('created_at', { ascending: false }));
+  const today = seoulToday();
+  const { from, to } = overviewWindow(today);
+  const { data, error } = await db
+    .from('projects')
+    .select('id, name, wbs_nodes(color, tasks(start_date, end_date, status))')
+    .gte('wbs_nodes.tasks.end_date', from)
+    .lte('wbs_nodes.tasks.start_date', to)
+    .order('created_at', { ascending: false });
+  if (error) return fail(error.code, error.message);
+  return ok(data.map((p) => ({
+    id: p.id,
+    name: p.name,
+    overview: buildOverview(p.wbs_nodes.flatMap((n) => n.tasks.map((t) => ({ ...t, status: t.status as TaskStatus, color: n.color }))), today),
+  })));
 }
 
 export async function createProject(name: string, adminName: string, password: string): Promise<ActionResult<ProjectSummary>> {
